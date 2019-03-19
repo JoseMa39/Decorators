@@ -1,0 +1,275 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace DecoratorsClassesGenerated
+{
+
+	public class ParamsGenerics<#= CantParams #><#
+	
+	
+		if(CantParams>0)
+		{
+			Write("<T" + 1);
+			for(int i = 2; i<= CantParams; i++)
+			{
+				Write(", T" + i);
+			}
+			Write(">");
+		}
+	#> : IEnumerable<object>
+	{
+	<#
+		WriteLine("");
+		PushIndent("		");
+		for(int i = 1; i<= CantParams; i++)
+		{
+			WriteLine($"T{i} item{i};");
+		} 
+		PopIndent();
+	#>
+	
+		public ParamsGenerics2(<#
+			
+			if(CantParams>0)
+			{
+				Write("T1 item1");
+				for(int i = 2; i<= CantParams; i++)
+				{
+					Write("," + $"T{i} item{i}");
+				}
+			}
+		#>)
+		{<#		
+				PushIndent("			");
+				WriteLine("");
+				for(int i = 1; i<= CantParams; i++)
+				{
+					WriteLine($"this.item{i} = item{i};");
+				} 
+				PopIndent();
+		#>
+		}
+	
+		<#	
+			PushIndent("		");
+			WriteLine("");
+			for(int i = 1; i<= CantParams; i++)
+			{
+				WriteLine($"public T{i} Item{i}" + " { get => item" + i + "; set => item" + i + " = value; }");
+			} 
+			PopIndent();
+		#>
+	
+	
+		public IEnumerator<object> GetEnumerator()
+	    {
+	        return new Params<#= CantParams #>Enumerator<#
+	
+			if(CantParams>0)
+			{
+				Write("<T" + 1);
+				for(int i = 2; i<= CantParams; i++)
+				{
+					Write(", T" + i);
+				}
+				Write(">");
+			}
+			#>(this);
+	    }
+	
+		IEnumerator IEnumerable.GetEnumerator()
+	    {
+	        return GetEnumerator();
+	    }
+	
+	
+		public object this[int index]
+	    {
+	        get
+	        {
+	            switch (index)
+	            {
+					<#
+						PushIndent("					");
+						WriteLine("");
+						for(int i = 0; i< CantParams; i++)
+						{
+							WriteLine($"case {i}:");
+							WriteLine($"	return Item{i+1};");
+						}
+						PopIndent();
+					#>
+	                default:
+	                    throw new IndexOutOfRangeException();
+	            }
+	        }
+	        set
+	        {
+	            switch (index)
+	            {
+	                <#
+						PushIndent("					");
+						WriteLine("");
+						for(int i = 0; i< CantParams; i++)
+						{
+							WriteLine($"case {i}:");
+							WriteLine($"	Item{i+1} = (T{i+1})value;");
+							WriteLine($"	break;");
+						}
+						PopIndent();
+					#>
+	                default:
+	                    throw new IndexOutOfRangeException();
+	            }
+	        }
+	    }
+	
+		IEnumerator IEnumerable.GetEnumerator()
+	    {
+	        return GetEnumerator();
+	    }
+	
+		public <#
+		
+		if(CantParams==1)
+			Write("T1");
+		else if(CantParams>1)
+			{
+				Write("(T" + 1);
+				for(int i = 2; i<= CantParams; i++)
+				{
+					Write(", T" + i);
+				}
+				Write(")");
+			}
+		else Write("object");
+			
+		#> ToTuple()
+		{
+			return <#
+				if(CantParams==1)
+					WriteLine("Item1");
+				
+				else if(CantParams>1)
+				{
+					Write("(Item" + 1);
+					for(int i = 2; i<= CantParams; i++)
+					{
+						Write(", Item" + i);
+					}
+					WriteLine(");");
+				}
+				else WriteLine("null");
+			#>
+		}
+	
+		public override int GetHashCode()
+	    {
+	        return this.ToTuple().GetHashCode();
+	    }
+	    public override string ToString()
+	    {
+	        return this.ToTuple().ToString();
+	    }
+
+		public int Length { get { return <#= CantParams#>; } }
+	
+		
+	
+	}
+
+	class Params<#= CantParams #>Enumerator<#
+	
+		if(CantParams>0)
+		{
+			Write("<T" + 1);
+			for(int i = 2; i<= CantParams; i++)
+			{
+				Write(", T" + i);
+			}
+			Write(">");
+		}
+	#>: IEnumerator<object>
+	{
+		object current;
+	    bool hasMoveNext;
+	    int pos;
+		ParamsGenerics<#= CantParams #><#
+	
+		if(CantParams>0)
+		{
+			Write("<T" + 1);
+			for(int i = 2; i<= CantParams; i++)
+			{
+				Write(", T" + i);
+			}
+			Write(">");
+		}
+	#> e;
+
+		public Params2Enumerator(ParamsGenerics<#= CantParams #><#
+		
+			if(CantParams>0)
+			{
+				Write("<T" + 1);
+				for(int i = 2; i<= CantParams; i++)
+				{
+					Write(", T" + i);
+				}
+				Write(">");
+			}
+		#> e)
+		{
+			this.e = e;
+		    pos = 0;
+		    hasMoveNext = false;
+		}
+
+		public object Current
+        { 
+			get
+            {
+                if (hasMoveNext)
+                    return current;
+                throw new Exception();
+            }
+        }
+
+        public void Dispose() {}
+
+		public void Reset() {}
+
+		public bool MoveNext()
+        {
+			switch (pos)
+            {
+				<#
+					PushIndent("				");
+					WriteLine("");
+					for(int i = 0; i< CantParams; i++)
+					{
+						WriteLine($"case {i}:");
+						WriteLine($"	current = e.Item{i+1};");
+						WriteLine($"	break;");
+					}
+					PopIndent();
+				#>
+				default:
+                    return hasMoveNext = false;
+			}
+			pos++;
+            return hasMoveNext = true;
+		}
+
+	}
+
+	
+}
+

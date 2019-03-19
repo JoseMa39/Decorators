@@ -13,11 +13,12 @@ namespace Decorators.CodeInjections
     class MakingDecoratedCompilation
     {
         Compilation compilation;
+        IEnumerable<MethodDeclarationSyntax> decorators;
 
-        public MakingDecoratedCompilation(Compilation compilation)
+        public MakingDecoratedCompilation(Compilation compilation, IEnumerable<MethodDeclarationSyntax> decorators)
         {
             this.compilation = compilation;
-            //this.modeloSemantico = modeloSemantico;
+            this.decorators = decorators;
         }
 
         public Compilation Decorating()
@@ -97,6 +98,7 @@ namespace Decorators.CodeInjections
 
         }
 
+
         private MethodDeclarationSyntax ChangingToDecoratedCode(MethodDeclarationSyntax node)
         {
             //quitando atributos de la funcion a decorar 
@@ -117,6 +119,7 @@ namespace Decorators.CodeInjections
             BlockSyntax body = SyntaxFactory.Block(temp1);
             return node.WithBody(body);
         }
+
 
         //crea un delegado estatico que guarda la funcion decorada
         private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, string decoratorName)
@@ -146,8 +149,10 @@ namespace Decorators.CodeInjections
         
         private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated, SyntaxTree tree)
         {
-            DecoratorRewriter deco = new DecoratorRewriter(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
+            //DecoratorRewriter deco = new DecoratorRewriter(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
+            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
             var newDecorator = deco.Visit(decoratorMethod);
+            //Console.WriteLine(newDecorator.ToFullString());
             return newDecorator as MethodDeclarationSyntax;
         }
 
@@ -167,7 +172,7 @@ namespace Decorators.CodeInjections
         //Busca el decorador
         private MethodDeclarationSyntax LookingForDecorator(SyntaxNode root, string nameDecorator)
         {
-            return root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => n.Identifier.Text == nameDecorator).First();
+            return decorators.Where(n => n.Identifier.Text == nameDecorator).First();
         }
 
         

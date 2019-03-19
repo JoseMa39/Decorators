@@ -62,13 +62,15 @@ namespace InFile2
 
             return (args) =>
             {
+                var a = args[1];
                 DynamicResult res;
-                if (memory.TryGetValue(args, out res))
-                {
-                    Console.WriteLine($"Using memoized value for {args[0]}: {res}");
-                    return res;
-                }
-                memory[args] = res;
+                //if (memory.TryGetValue(args, out res))
+                //{
+                //    Console.WriteLine($"Using memoized value for {args[0]}: {res}");
+                //    return res;
+                //}
+                res = d(args);
+                //memory[args] = res;
                 return res;
             };
         }

@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DecoratorsClasses.classesToCreate
+namespace Decorators.DecoratorsClasses.ClassesToCreate
 {
-    class ParamsGenerics2<T1, T2> : IEnumerable<object>
+    public class ParamsGenerics2<T1, T2> : IEnumerable<object>
     {
         T1 item1;
         T2 item2;
