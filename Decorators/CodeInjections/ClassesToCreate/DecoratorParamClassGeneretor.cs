@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Decorators.DecoratorsClasses.ClassesToCreate
+namespace Decorators.CodeInjections.ClassesToCreate
 {
     using System.Linq;
     using System.Text;
@@ -18,7 +18,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
     /// Class to produce the template output
     /// </summary>
     
-    #line 1 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+    #line 1 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "15.0.0.0")]
     public partial class DecoratorParamClassGeneretor : DecoratorParamClassGeneretorBase
     {
@@ -31,13 +31,13 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             this.Write("\r\nusing System;\r\nusing System.Collections;\r\nusing System.Collections.Generic;\r\n\r\n" +
                     "namespace DecoratorsClassesGenerated\r\n{\r\n\r\n\tpublic class ParamsGenerics");
             
-            #line 14 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 14 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             
-            #line 14 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 14 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 	
 	
@@ -56,7 +56,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write(" : IEnumerable<object>\r\n\t{\r\n\t");
             
-            #line 28 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 28 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 		WriteLine("");
 		PushIndent("		");
@@ -71,7 +71,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write("\t\r\n\t\tpublic ParamsGenerics2(");
             
-            #line 38 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 38 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 			
 			if(CantParams>0)
@@ -88,7 +88,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write(")\r\n\t\t{");
             
-            #line 49 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 49 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 		
 				PushIndent("			");
 				WriteLine("");
@@ -103,7 +103,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write("\t\t}\r\n\t\r\n\t\t");
             
-            #line 60 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 60 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 	
 			PushIndent("		");
 			WriteLine("");
@@ -119,14 +119,14 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             this.Write("\t\r\n\t\r\n\t\tpublic IEnumerator<object> GetEnumerator()\r\n\t    {\r\n\t        return new P" +
                     "arams");
             
-            #line 73 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 73 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             this.Write("Enumerator");
             
-            #line 73 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 73 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 	
 			if(CantParams>0)
@@ -146,7 +146,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
                     "eturn GetEnumerator();\r\n\t    }\r\n\t\r\n\t\r\n\t\tpublic object this[int index]\r\n\t    {\r\n\t" +
                     "        get\r\n\t        {\r\n\t            switch (index)\r\n\t            {\r\n\t\t\t\t\t");
             
-            #line 99 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 99 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 						PushIndent("					");
 						WriteLine("");
@@ -164,7 +164,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
                     "n();\r\n\t            }\r\n\t        }\r\n\t        set\r\n\t        {\r\n\t            switch " +
                     "(index)\r\n\t            {\r\n\t                ");
             
-            #line 117 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 117 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 						PushIndent("					");
 						WriteLine("");
@@ -180,10 +180,9 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line default
             #line hidden
             this.Write("\t                default:\r\n\t                    throw new IndexOutOfRangeExceptio" +
-                    "n();\r\n\t            }\r\n\t        }\r\n\t    }\r\n\t\r\n\t\tIEnumerator IEnumerable.GetEnumer" +
-                    "ator()\r\n\t    {\r\n\t        return GetEnumerator();\r\n\t    }\r\n\t\r\n\t\tpublic ");
+                    "n();\r\n\t            }\r\n\t        }\r\n\t    }\r\n\t\r\n\t\tpublic ");
             
-            #line 139 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 134 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 		
 		if(CantParams==1)
@@ -205,7 +204,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write(" ToTuple()\r\n\t\t{\r\n\t\t\treturn ");
             
-            #line 156 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 151 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 				if(CantParams==1)
 					WriteLine("Item1");
@@ -229,21 +228,21 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
                     "    return this.ToTuple().ToString();\r\n\t    }\r\n\r\n\t\tpublic int Length { get { ret" +
                     "urn ");
             
-            #line 182 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 177 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             this.Write("; } }\r\n\t\r\n\t\t\r\n\t\r\n\t}\r\n\r\n\tclass Params");
             
-            #line 188 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 183 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             this.Write("Enumerator");
             
-            #line 188 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 183 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 	
 		if(CantParams>0)
@@ -262,13 +261,13 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             this.Write(": IEnumerator<object>\r\n\t{\r\n\t\tobject current;\r\n\t    bool hasMoveNext;\r\n\t    int po" +
                     "s;\r\n\t\tParamsGenerics");
             
-            #line 204 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 199 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             
-            #line 204 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 199 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 	
 		if(CantParams>0)
@@ -286,13 +285,13 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             #line hidden
             this.Write(" e;\r\n\r\n\t\tpublic Params2Enumerator(ParamsGenerics");
             
-            #line 217 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 212 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
             
             #line default
             #line hidden
             
-            #line 217 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 212 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 		
 			if(CantParams>0)
@@ -335,7 +334,7 @@ namespace Decorators.DecoratorsClasses.ClassesToCreate
             {
 				");
             
-            #line 253 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            #line 248 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 					PushIndent("				");
 					WriteLine("");

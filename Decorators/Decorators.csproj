@@ -14,6 +14,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -233,31 +234,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CodeInjections\DecoratorRewriter.cs" />
-    <Compile Include="CodeInjections\MethodRewriter.cs" />
-    <Compile Include="CodeInjections\Metodos_decorados.cs" />
+    <Compile Include="CodeInjections\Sin usar\DecoratorRewriter.cs" />
+    <Compile Include="CodeInjections\DecoratedCompilation.cs" />
     <Compile Include="CodeInjections\SpecificDecoratorRewriterVisitor.cs" />
-    <Compile Include="DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.cs">
+    <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>DecoratorParamClassGeneretor.tt</DependentUpon>
     </Compile>
-    <Compile Include="DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
-    <Compile Include="DecoratorsClasses\ClassesToCreate\ParamsGenerics2.cs" />
-    <Compile Include="DecoratorsClasses\Decorate.cs" />
-    <Compile Include="DecoratorsClasses\DynamicParamsCollection\DynamicParamsCollection.cs" />
-    <Compile Include="DecoratorsClasses\DynamicParamsCollection\IGenericTuple.cs" />
-    <Compile Include="DecoratorsClasses\DynamicTypes\DynamicParam.cs" />
-    <Compile Include="DecoratorsClasses\DynamicTypes\DynamicResult.cs" />
-    <Compile Include="DecoratorsClasses\DynamicTypes\DynamicType.cs" />
+    <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
+    <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
     <Compile Include="DecoratorsCollector\CheckDecoratorWithAttr.cs" />
     <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />
     <Compile Include="DecoratorsCollector\IDecoratorChecker.cs" />
-    <Compile Include="inFolder\inFileParamsCollection.cs" />
     <Compile Include="inFolder\inFile.cs" />
+    <Compile Include="inFolder\inFileParamsCollection.cs" />
     <Compile Include="outFolder\outFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\FilePathUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -271,13 +266,19 @@
     <Folder Include="CodeInjections\Interfaces\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="DecoratorsClasses\ClassesToCreate\DecoratorParamClassGeneretor.tt">
+    <Content Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>DecoratorParamClassGeneretor.cs</LastGenOutput>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DecoratorsDLL\DecoratorsDLL.csproj">
+      <Project>{946a99f6-e26b-469f-8b57-9befde19a1a3}</Project>
+      <Name>DecoratorsDLL</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

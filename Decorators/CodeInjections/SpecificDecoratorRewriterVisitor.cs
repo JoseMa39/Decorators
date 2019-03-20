@@ -1,4 +1,4 @@
-﻿using Decorators.DecoratorsClasses.ClassesToCreate;
+﻿using Decorators.CodeInjections.ClassesToCreate;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -73,6 +73,11 @@ namespace Decorators.CodeInjections
 
             node = node.WithParameterList(SyntaxFactory.ParameterList().AddParameters(param));
 
+            //si hace falta generar clase, anado una annotation ("using", cantParams) para luego poder anadir la referencia correspondiente y generar la clase
+            if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
+                node = node.WithAdditionalAnnotations(new SyntaxAnnotation("using", cantArgumentsToDecorated.ToString()));
+
+
             return node;
         }
 
@@ -122,7 +127,6 @@ namespace Decorators.CodeInjections
 
         }
 
-        //todavia no lo arreglo
         public override SyntaxNode VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         {
             //obteniendo el tipo
@@ -319,7 +323,9 @@ namespace Decorators.CodeInjections
                 var newBody = body as BlockSyntax;
 
                 if (newBody.DescendantNodes().OfType<IdentifierNameSyntax>().Where(n => n.Identifier.Text == currentArgsName && !n.GetAnnotations("toChangeId").Any()).Any())   //chequea si hace falta instanciar la clase de los parametros
+                {
                     newBody = newBody.WithStatements(newBody.Statements.Insert(0, CreateArgsClassInstruction(newBody.Statements[0].GetLeadingTrivia(), newBody.Statements[0].GetTrailingTrivia())));
+                }
                 else
                 {
                     //en caso de que no hizo falta crea la clase params, entonces elimino su existencia (sustituyo por los parametros reales)
@@ -337,6 +343,7 @@ namespace Decorators.CodeInjections
                         newBody = newBody.ReplaceNode(accExp, newAccExp);
                     }
                 }
+
                 return newBody;
             }
             return body;

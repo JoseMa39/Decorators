@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DecoratorsClasses.ClassesToCreate
+namespace Decorators.CodeInjections.ClassesToCreate
 {
     public partial class DecoratorParamClassGeneretor
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DynamicTypes
+namespace DecoratorsDLL.DynamicTypes
 {
     /// <summary>
     /// Tipo utilizado para representar el tipo de retorno de las funciones decoradas. Es sustituido por el tipo especifico de retorno una vez decorada una funcion.

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DecoratorsClasses.ClassesToCreate
+namespace Decorators.CodeInjections.ClassesToCreate
 {
     public class ParamsGenerics2<T1, T2> : IEnumerable<object>
     {

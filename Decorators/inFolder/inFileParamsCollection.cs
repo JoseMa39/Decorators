@@ -1,6 +1,6 @@
-﻿using Decorators;
-using Decorators.DecoratorsClasses.DynamicParamsCollection;
-using Decorators.DynamicTypes;
+﻿using DecoratorsDLL;
+using DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection;
+using DecoratorsDLL.DynamicTypes;
 using System;
 using System.Collections;
 using System.Collections.Generic;

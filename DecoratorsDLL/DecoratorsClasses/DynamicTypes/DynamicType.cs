@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DynamicTypes
+namespace DecoratorsDLL.DynamicTypes
 {
     /// <summary>
     /// Tipo base para los parametros y return de los decoradores

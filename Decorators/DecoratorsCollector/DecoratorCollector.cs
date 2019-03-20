@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Decorators.DecoratorsCollector
 {
+
     public static class DecoratorCollector
     {
         /// <summary>
@@ -25,7 +26,6 @@ namespace Decorators.DecoratorsCollector
                 var doc = project.GetDocument(docId);
                 var syntaxTree = await doc.GetSyntaxTreeAsync();
                 var root = await syntaxTree.GetRootAsync();
-
                 decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node as MethodDeclarationSyntax, compilation.GetSemanticModel(syntaxTree) )));
             }
             return decorators;

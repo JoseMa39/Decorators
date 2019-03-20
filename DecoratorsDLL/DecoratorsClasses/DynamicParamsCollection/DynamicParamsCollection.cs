@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DecoratorsClasses.DynamicParamsCollection
+namespace DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection
 {
     public class DynamicParamsCollection: IGenericTuple, IEnumerable
     {
         object[]values;
         private DynamicParamsCollection()
         {
-            
         }
 
         public dynamic ToTuple()

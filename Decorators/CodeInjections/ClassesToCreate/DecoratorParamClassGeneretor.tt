@@ -131,11 +131,6 @@ namespace DecoratorsClassesGenerated
 	        }
 	    }
 	
-		IEnumerator IEnumerable.GetEnumerator()
-	    {
-	        return GetEnumerator();
-	    }
-	
 		public <#
 		
 		if(CantParams==1)

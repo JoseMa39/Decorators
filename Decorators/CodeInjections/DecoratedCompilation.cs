@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Decorators.CodeInjections.ClassesToCreate;
+using Decorators.DecoratorsCollector;
+using Decorators.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -10,19 +14,73 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Decorators.CodeInjections
 {
-    class MakingDecoratedCompilation
+    class DecoratedCompilation
     {
+        Project project;
         Compilation compilation;
         IEnumerable<MethodDeclarationSyntax> decorators;
+        List<int> classesToGen;
 
-        public MakingDecoratedCompilation(Compilation compilation, IEnumerable<MethodDeclarationSyntax> decorators)
+        string namespaceClassesGenerated;
+
+
+        public DecoratedCompilation(Compilation compilation)
         {
             this.compilation = compilation;
-            this.decorators = decorators;
+            this.namespaceClassesGenerated = "DecoratorsClassesGenerated";
         }
+
+        public DecoratedCompilation(Project project)
+        {
+            this.project = project;
+            this.namespaceClassesGenerated = "DecoratorsClassesGenerated";
+        }
+
+        public async Task<Project> DecoratingProjectAsync(string outputRelPathModifiedFiles)
+        {
+            classesToGen = new List<int>();
+            this.decorators = await DecoratorCollector.GetDecorators(this.project, new CheckDecoratorWithAttr());
+            var currentProject = this.project;
+            this.compilation = await currentProject.GetCompilationAsync();
+
+            foreach (var doc in this.project.Documents)
+            {
+                var currentRoot = await doc.GetSyntaxRootAsync();
+                var oldSyntaxTree = currentRoot.SyntaxTree;
+
+                foreach (var node in currentRoot.DescendantNodes())
+                {
+                    if (node is MethodDeclarationSyntax)
+                        currentRoot = DecoratingMethods(node as MethodDeclarationSyntax, currentRoot);
+                }
+                if (oldSyntaxTree != currentRoot.SyntaxTree)  //si cambio el syntaxtree, creo un fichero nuevo con las modificaciones
+                {
+                    this.compilation = compilation.ReplaceSyntaxTree(oldSyntaxTree, currentRoot.SyntaxTree);
+                    string directoryOutput = IOUtilities.BasePath(project.FilePath) + "\\" + outputRelPathModifiedFiles;
+                    Directory.CreateDirectory(directoryOutput);
+                    IOUtilities.WriteSyntaxTreeInFile(IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRelPathModifiedFiles + "\\" + Path.GetFileName(oldSyntaxTree.FilePath), currentRoot.SyntaxTree);
+
+                    currentProject = currentProject.RemoveDocument(doc.Id);
+                    currentProject = currentProject.AddDocument(doc.Name,currentRoot).Project;
+                }
+
+            }
+
+            foreach (var cantParams in this.classesToGen)
+            {
+                string code = GenerateClass(cantParams, IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRelPathModifiedFiles);
+                currentProject = currentProject.AddDocument($"ParamsGenerics{cantParams}.cs",code).Project;
+            }
+            classesToGen = null;
+            return currentProject;
+        }
+
+
 
         public Compilation Decorating()
         {
+            this.decorators = DecoratorCollector.GetDecorators(compilation, new CheckDecoratorWithAttr());
+
             foreach (var oldSyntaxTree in compilation.SyntaxTrees)
             {
                 var root = oldSyntaxTree.GetRoot();
@@ -54,6 +112,21 @@ namespace Decorators.CodeInjections
 
             //Creando decorador con los tipos especificos de la funcion decorada
             var method = CreateSpecificDecorator(decoratorMethod, node, root.SyntaxTree);
+
+           
+            //anadiendo los using necesarios en caso de que se genere la clase para los parametros
+            if (method.GetAnnotations("using").Any())
+            {
+                var annotation = method.GetAnnotations("using").First();
+                var using1 = SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(this.namespaceClassesGenerated).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia,"\n"));
+                SyntaxNode[] temp = { using1};
+                root = root.InsertNodesBefore(root.ChildNodes().First(), temp);
+
+                if(!this.classesToGen.Contains(node.ParameterList.Parameters.Count))  //guardando las clases que necesito generar
+                    classesToGen.Add(node.ParameterList.Parameters.Count);
+            }
+
+
             var modifiedClass = originalclass.AddMembers(method);
 
             //anadiendo funcion privada con el codigo de la funcion decorada
@@ -67,10 +140,6 @@ namespace Decorators.CodeInjections
 
             //Sustituyendo el codigo de la funcion a decorar (return staticDelegateDecorated(param1, ... , paramN))
             modifiedClass = modifiedClass.ReplaceNode(modifiedClass.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n=> n.ToFullString() == node.ToFullString()).First(), ChangingToDecoratedCode(node));
-
-            //Console.WriteLine(originalclass.ToFullString());
-            //Console.WriteLine("---------------------------");
-            //Console.WriteLine(modifiedClass.ToFullString());
 
             root  = root.ReplaceNode(originalclass, modifiedClass);
             return root;
@@ -149,15 +218,23 @@ namespace Decorators.CodeInjections
         
         private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated, SyntaxTree tree)
         {
-            //DecoratorRewriter deco = new DecoratorRewriter(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
             SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
             var newDecorator = deco.Visit(decoratorMethod);
-            //Console.WriteLine(newDecorator.ToFullString());
             return newDecorator as MethodDeclarationSyntax;
         }
 
+
+        private string GenerateClass(int cantParams, string path)
+        {
+            DecoratorParamClassGeneretor page = new DecoratorParamClassGeneretor(cantParams);
+            string pageContent = page.TransformText();
+            File.WriteAllText(path + $"\\ParamsGenerics{cantParams}.cs", pageContent);
+            return pageContent;
+        }
         #endregion
 
+
+        #region Useful functions
         //Extrae el nombre del decorador
         internal static string ExtractDecoratorFullName(AttributeSyntax attr)
         {
@@ -175,7 +252,7 @@ namespace Decorators.CodeInjections
             return decorators.Where(n => n.Identifier.Text == nameDecorator).First();
         }
 
-        
-       
+        #endregion
+
     }
 }
