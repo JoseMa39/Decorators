@@ -1,5 +1,5 @@
 ﻿using DecoratorsDLL;
-using DecoratorsDLL.DynamicTypes;
+using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using System;
 using System.Collections;
 using System.Collections.Generic;

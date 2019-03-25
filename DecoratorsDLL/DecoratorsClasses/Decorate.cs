@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DecoratorsDLL
 {
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class DecorateWithAttribute:Attribute
     {
         private string method_name;

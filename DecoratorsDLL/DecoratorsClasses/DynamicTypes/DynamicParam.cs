@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DecoratorsDLL.DynamicTypes
+namespace DecoratorsDLL.DecoratorsClasses.DynamicTypes
 {
     /// <summary>
     /// Tipo utilizado para representar los parametros de las funciones decoradas. Es sustituido por el tipo especifico del parametro una vez decorada una funcion.

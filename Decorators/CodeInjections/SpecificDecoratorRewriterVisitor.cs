@@ -15,19 +15,25 @@ namespace Decorators.CodeInjections
         private readonly SemanticModel modeloSemantico;
         private MethodDeclarationSyntax decoratorMethod;
         private MethodDeclarationSyntax toDecorated;
-        private string currentArgsName, paramsName, dynamicParam, dynamicResult, paramClassGenerated;
+        private string currentArgsName, paramsName, dynamicParam, dynamicResult, paramClassGenerated, toTupleParamsType, toTupleMethodName;
         private int cantArgumentsToDecorated;
 
         public SpecificDecoratorRewriterVisitor(SemanticModel modeloSemantico, MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated
-            , string paramsName = "__param", string dynamicParam = "DynamicParamsCollection", string dynamicResult = "DynamicResult", string paramClassGenerated = "ParamsGenerics")
+            , string paramsName = "__param", string paramClassGenerated = "ParamsGenerics")
         {
             this.modeloSemantico = modeloSemantico;
             this.decoratorMethod = decoratorMethod;
             this.toDecorated = toDecorated;
+
+
             this.paramsName = paramsName;
             this.paramClassGenerated = paramClassGenerated;
-            this.dynamicParam = dynamicParam;
-            this.dynamicResult = dynamicResult;
+
+            this.dynamicParam = "DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection.DynamicParamsCollection"; 
+            this.dynamicResult = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicResult";
+            this.toTupleParamsType = "DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection.DynamicParamsCollection.ToTupleParamsType";
+            this.toTupleMethodName = "ToTuple()";
+
             cantArgumentsToDecorated = toDecorated.ParameterList.Parameters.Count;
         }
 
@@ -57,7 +63,6 @@ namespace Decorators.CodeInjections
                     var paramArray = MakingParameters();
                     //actualizando tipo de retorno
                     node = node.WithParameterList(parameters.AddParameters(paramArray)).WithReturnType(toDecorated.ReturnType);
-
                     node = node.WithBody(WorkingWithWrapperFunction(node.Body) as BlockSyntax);
                 }
                 currentArgsName = temp;
@@ -77,7 +82,6 @@ namespace Decorators.CodeInjections
             if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
                 node = node.WithAdditionalAnnotations(new SyntaxAnnotation("using", cantArgumentsToDecorated.ToString()));
 
-
             return node;
         }
 
@@ -96,7 +100,7 @@ namespace Decorators.CodeInjections
             if (isWrapper)  //reconociendo se se trata de un wrapper a la funcion decorada
             {
                 var parameters = SyntaxFactory.ParameterList();
-
+                
                 //creando lista de parametros (el nombre de cada uno es __param0, __param1, etc)
                 var paramArray = MakingParameters();
                 //actualizando tipo de retorno
@@ -109,22 +113,31 @@ namespace Decorators.CodeInjections
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
         {
+            var methodSymbol = modeloSemantico.GetSymbolInfo(node).Symbol as IMethodSymbol;
+
             bool isToDecorated = IsToDecoratedFunction(node);
             node = base.VisitInvocationExpression(node) as InvocationExpressionSyntax;
             //falta considerar cuando la funcion se guarda desde un delegate
             if (IsToDecoratedFunction(node))
             {
-                if (node.ArgumentList.Arguments[0].Expression.ToFullString() == currentArgsName)
-                {
+                if (node.ArgumentList.Arguments[0].Expression.ToFullString() == currentArgsName) //toChange marca el nodo padre q se tendria q modificar
+                { //toChangeId marca el nodo particular a ser cambiado (ver si luego se puede quitar)
                     node = node.WithAdditionalAnnotations(new SyntaxAnnotation("toChange", "invocationExp"));  //para si no hace falta crear la clase args poner luego directamente los parametros
                     node = node.WithArgumentList(MakingInvocationArguments(node.ArgumentList.Arguments[0].WithExpression(node.ArgumentList.Arguments[0].Expression.WithAdditionalAnnotations(new SyntaxAnnotation("toChangeId", "identifier")))));
-                    //node = node.WithArgumentList(MakingInvocationArguments());
                 }
                 else node = node.WithArgumentList(MakingInvocationArguments(node.ArgumentList.Arguments[0]));
-
+            }
+            //args.ToTuple()
+            else if (methodSymbol!= null && methodSymbol.OriginalDefinition.ToDisplayString() == this.dynamicParam + "." + this.toTupleMethodName)
+            {
+                var memberAccessExp = node.Expression as MemberAccessExpressionSyntax;
+                if(memberAccessExp.Expression.ToFullString() == currentArgsName)
+                {
+                    memberAccessExp = memberAccessExp.WithExpression(memberAccessExp.Expression.WithAdditionalAnnotations(new SyntaxAnnotation("toChangeId", "identifier")));
+                    node = node.WithExpression(memberAccessExp).WithAdditionalAnnotations(new SyntaxAnnotation("toChangeToTupleMember", "ToTuple"));
+                }
             }
             return node;
-
         }
 
         public override SyntaxNode VisitElementAccessExpression(ElementAccessExpressionSyntax node)
@@ -133,7 +146,7 @@ namespace Decorators.CodeInjections
             var type = modeloSemantico.GetTypeInfo(node.Expression).Type as ITypeSymbol;
             node = base.VisitElementAccessExpression(node) as ElementAccessExpressionSyntax;
 
-            if (type.Name == dynamicParam && (node.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax))
+            if (type.OriginalDefinition.ToDisplayString() == dynamicParam && (node.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax))
             {
                 var newNode = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,node.Expression,SyntaxFactory.IdentifierName($"Item{1 + int.Parse(node.ArgumentList.Arguments[0].ToFullString())}"));
                 if (node.Expression is IdentifierNameSyntax && (node.Expression as IdentifierNameSyntax).Identifier.Text == currentArgsName)
@@ -151,7 +164,7 @@ namespace Decorators.CodeInjections
             var type = modeloSemantico.GetTypeInfo(node.Type).Type as INamedTypeSymbol;
             node = base.VisitVariableDeclaration(node) as VariableDeclarationSyntax;
 
-            if (type != null && type.Name == dynamicParam)
+            if (type != null && type.OriginalDefinition.ToDisplayString() == dynamicParam)
             {
                 //multiple inicializacion, o si no esta inicializado
                 if (node.Variables.Count > 1 || node.Variables[0].Initializer == null)
@@ -170,7 +183,7 @@ namespace Decorators.CodeInjections
             var type = modeloSemantico.GetTypeInfo(node).Type as INamedTypeSymbol;
             node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
 
-            if (type.Name == dynamicResult)
+            if (type.OriginalDefinition.ToDisplayString() == dynamicResult)
                 return node.ArgumentList.Arguments[0].Expression;
 
             return node;
@@ -178,14 +191,25 @@ namespace Decorators.CodeInjections
 
         public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
         {
+            var type = modeloSemantico.GetTypeInfo(node).Type as ITypeSymbol;
             node = base.VisitIdentifierName(node) as IdentifierNameSyntax;
-            if (node.Identifier.Text == dynamicResult)
+
+            if (type==null)
+                return node;
+
+            string completeType = type.OriginalDefinition.ToDisplayString();
+
+            if (completeType == dynamicResult && node.Identifier.Text == dynamicResult.Split('.').Last() )
             {
                 return toDecorated.ReturnType.WithTriviaFrom(node);
             }
-            if (node.Identifier.Text == dynamicParam)
+            if (completeType == dynamicParam && node.Identifier.Text == dynamicParam.Split('.').Last())
             {
                 return MakingGenericNameWithParams();
+            }
+            if (completeType == this.toTupleParamsType && node.Identifier.Text == toTupleParamsType.Split('.').Last())
+            {
+                return MakingTupleType();
             }
             return node;
         }
@@ -201,6 +225,32 @@ namespace Decorators.CodeInjections
             return node;
         }
 
+        //asegurandome cambiar los tipos dynamic... del decorador
+        public override SyntaxNode VisitQualifiedName(QualifiedNameSyntax node)
+        {
+            var type = modeloSemantico.GetTypeInfo(node).Type as ITypeSymbol;
+            string completeType = type.OriginalDefinition.ToDisplayString();
+            if (completeType == this.toTupleParamsType)
+            {
+               return MakingTupleType();
+            }
+            if (completeType == dynamicResult)
+            {
+                return toDecorated.ReturnType.WithTriviaFrom(node);
+            }
+            if (completeType == dynamicParam)
+            {
+                return MakingGenericNameWithParams();
+            }
+            node = base.VisitQualifiedName(node) as QualifiedNameSyntax;
+
+            return node;
+
+
+        }
+
+       
+
         #endregion
 
         #region IsWrapperDecorators
@@ -208,8 +258,7 @@ namespace Decorators.CodeInjections
         private bool IsWrapperDecorator(ParenthesizedLambdaExpressionSyntax node)
         {
             var symbol = modeloSemantico.GetSymbolInfo(node).Symbol as IMethodSymbol;
-
-            if (symbol.ReturnType.Name != dynamicResult)
+            if (symbol.ReturnType.OriginalDefinition.ToDisplayString() != dynamicResult)
                 return false;
 
             if (node.ParameterList.Parameters.Count != 1)
@@ -232,7 +281,9 @@ namespace Decorators.CodeInjections
             if (node.Identifier.Text != "Func" || node.Arity != 2)
                 return false;
 
-            if (((node.TypeArgumentList.Arguments[0]).ToFullString() != dynamicParam) || (node.TypeArgumentList.Arguments[1].ToFullString() != dynamicResult))
+            var typeParams= modeloSemantico.GetTypeInfo(node.TypeArgumentList.Arguments[0]).Type as ITypeSymbol;
+            var type = modeloSemantico.GetTypeInfo(node.TypeArgumentList.Arguments[1]).Type as ITypeSymbol;
+            if ((typeParams.OriginalDefinition.ToDisplayString() != dynamicParam) || (type.OriginalDefinition.ToDisplayString() != dynamicResult))
                 return false;
 
             return true;
@@ -243,12 +294,12 @@ namespace Decorators.CodeInjections
             //buscar si existe una mejor forma trabajando con el modelo semantico
             var returnType = modeloSemantico.GetTypeInfo(node.ReturnType).Type;
 
-            if (returnType.Name != dynamicResult)
+            if (returnType.OriginalDefinition.ToDisplayString() != dynamicResult)
                 return false;
 
             var a = node.ParameterList.Parameters[0];
             var paramType = modeloSemantico.GetTypeInfo(node.ParameterList.Parameters[0].Type).Type;
-            if (paramType.ToDisplayString() != dynamicParam)
+            if (paramType.OriginalDefinition.ToDisplayString() != dynamicParam)
                 return false;
 
             return true;
@@ -323,27 +374,21 @@ namespace Decorators.CodeInjections
                 var newBody = body as BlockSyntax;
 
                 if (newBody.DescendantNodes().OfType<IdentifierNameSyntax>().Where(n => n.Identifier.Text == currentArgsName && !n.GetAnnotations("toChangeId").Any()).Any())   //chequea si hace falta instanciar la clase de los parametros
-                {
                     newBody = newBody.WithStatements(newBody.Statements.Insert(0, CreateArgsClassInstruction(newBody.Statements[0].GetLeadingTrivia(), newBody.Statements[0].GetTrailingTrivia())));
-                }
                 else
                 {
                     //en caso de que no hizo falta crea la clase params, entonces elimino su existencia (sustituyo por los parametros reales)
                     var invocationToChange = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
-                    foreach (var inv in invocationToChange)
-                    {
-                        var newInv = inv.WithArgumentList(MakingInvocationArguments());
-                        newBody =  newBody.ReplaceNode(inv, newInv);
-                    }
+                    newBody = newBody.ReplaceNodes(invocationToChange, (n1, n2) => n1.WithArgumentList(MakingInvocationArguments()));
 
                     var arrayAccessExp = newBody.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
-                    foreach (var accExp in arrayAccessExp)
-                    {
-                        var newAccExp = SyntaxFactory.IdentifierName(paramsName + accExp.GetAnnotations("toChange").First().Data);
-                        newBody = newBody.ReplaceNode(accExp, newAccExp);
-                    }
-                }
+                    newBody = newBody.ReplaceNodes(arrayAccessExp, (n1, n2) => SyntaxFactory.IdentifierName(paramsName + n1.GetAnnotations("toChange").First().Data));
+                   
+                    var memberAccessExpsIEnumerable = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChangeToTupleMember").Any());
+                    newBody = newBody.ReplaceNodes(memberAccessExpsIEnumerable, (n1, n2) => MakingTupleValues());
+                    Console.WriteLine(newBody.ToFullString());
 
+                }
                 return newBody;
             }
             return body;
@@ -381,7 +426,35 @@ namespace Decorators.CodeInjections
            return SyntaxFactory.GenericName(SyntaxFactory.Identifier(paramClassGenerated + cantArgumentsToDecorated), argumentList);
         }
 
+        //(int,int)
+        private SyntaxNode MakingTupleType()
+        {
+            if (cantArgumentsToDecorated == 0)
+                return SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword));
+            if (cantArgumentsToDecorated == 1)
+                return toDecorated.ParameterList.Parameters[0].Type;
 
+            var newNode = SyntaxFactory.TupleType();
+            for (int i = 0; i < cantArgumentsToDecorated; i++)
+                newNode = newNode.AddElements(SyntaxFactory.TupleElement(toDecorated.ParameterList.Parameters[i].Type));
+
+            return newNode;
+        }
+
+        //(__param0,__param1,__...)
+        private SyntaxNode MakingTupleValues()
+        {
+            if (cantArgumentsToDecorated == 0) //si no tiene parametros pongo null
+                return SyntaxFactory.LiteralExpression(SyntaxKind.NullKeyword);
+            if (cantArgumentsToDecorated == 1) //1 parametro el tipo directo
+                return SyntaxFactory.IdentifierName(this.paramsName + "0");
+
+            var newNode = SyntaxFactory.TupleExpression();  //mas de 1, tuplas
+            for (int i = 0; i < cantArgumentsToDecorated; i++)
+                newNode = newNode.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.paramsName + i.ToString())));
+
+            return newNode;
+        }
         #endregion
     }
 }

@@ -245,8 +245,10 @@
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
     <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
     <Compile Include="DecoratorsCollector\CheckDecoratorWithAttr.cs" />
+    <Compile Include="DecoratorsCollector\DecoratorAttrChecker.cs" />
     <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />
     <Compile Include="DecoratorsCollector\IDecoratorChecker.cs" />
+    <Compile Include="DecoratorsCollector\IsDecorateAttr.cs" />
     <Compile Include="inFolder\inFile.cs" />
     <Compile Include="inFolder\inFileParamsCollection.cs" />
     <Compile Include="outFolder\outFile.cs" />

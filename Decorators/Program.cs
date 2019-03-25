@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.Formatting;
 using Decorators.CodeInjections.ClassesToCreate;
 using Decorators.DecoratorsCollector;
 using DecoratorsDLL;
-using DecoratorsDLL.DynamicTypes;
+using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 
 namespace Decorators
 {
@@ -43,6 +43,12 @@ namespace Decorators
 
             try
             {
+                foreach (var item in compilation.GetDiagnostics().Where(diag => diag.Severity == DiagnosticSeverity.Error).Select(diag => diag.Location))
+                {
+                    Console.WriteLine(item);
+
+                }
+
                 Console.WriteLine($"Diagnostics: {compilation.GetDiagnostics().Count()}" + $"\n {compilation.GetDiagnostics().Where(diag => diag.Severity == DiagnosticSeverity.Error).Select(diag => diag.GetMessage()).Aggregate((a, b) => $"{a}\n{b}")}");
             }
             catch (InvalidOperationException)

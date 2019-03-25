@@ -35,7 +35,7 @@ namespace DecoratorsClassesGenerated
 		PopIndent();
 	#>
 	
-		public ParamsGenerics2(<#
+		public ParamsGenerics<#= CantParams #>(<#
 			
 			if(CantParams>0)
 			{
@@ -150,7 +150,7 @@ namespace DecoratorsClassesGenerated
 		{
 			return <#
 				if(CantParams==1)
-					WriteLine("Item1");
+					WriteLine("Item1;");
 				
 				else if(CantParams>1)
 				{
@@ -209,7 +209,7 @@ namespace DecoratorsClassesGenerated
 		}
 	#> e;
 
-		public Params2Enumerator(ParamsGenerics<#= CantParams #><#
+		public Params<#= CantParams #>Enumerator(ParamsGenerics<#= CantParams #><#
 		
 			if(CantParams>0)
 			{

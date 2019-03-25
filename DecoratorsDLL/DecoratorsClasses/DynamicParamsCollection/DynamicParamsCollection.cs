@@ -34,7 +34,10 @@ namespace DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection
         
 
 
-        
+        public class ToTupleParamsType
+        {
+            private ToTupleParamsType() { }
+        }
 
 
     }

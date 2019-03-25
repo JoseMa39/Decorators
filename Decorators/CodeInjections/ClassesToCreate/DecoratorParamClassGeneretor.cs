@@ -69,7 +69,14 @@ namespace Decorators.CodeInjections.ClassesToCreate
             
             #line default
             #line hidden
-            this.Write("\t\r\n\t\tpublic ParamsGenerics2(");
+            this.Write("\t\r\n\t\tpublic ParamsGenerics");
+            
+            #line 38 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
+            
+            #line default
+            #line hidden
+            this.Write("(");
             
             #line 38 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
@@ -207,7 +214,7 @@ namespace Decorators.CodeInjections.ClassesToCreate
             #line 151 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
 
 				if(CantParams==1)
-					WriteLine("Item1");
+					WriteLine("Item1;");
 				
 				else if(CantParams>1)
 				{
@@ -283,7 +290,14 @@ namespace Decorators.CodeInjections.ClassesToCreate
             
             #line default
             #line hidden
-            this.Write(" e;\r\n\r\n\t\tpublic Params2Enumerator(ParamsGenerics");
+            this.Write(" e;\r\n\r\n\t\tpublic Params");
+            
+            #line 212 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
+            
+            #line default
+            #line hidden
+            this.Write("Enumerator(ParamsGenerics");
             
             #line 212 "C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Decorators\Decorators\CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(CantParams));
