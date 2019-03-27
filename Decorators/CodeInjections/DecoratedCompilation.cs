@@ -24,12 +24,6 @@ namespace Decorators.CodeInjections
         string namespaceClassesGenerated;
 
 
-        public DecoratedCompilation(Compilation compilation)
-        {
-            this.compilation = compilation;
-            this.namespaceClassesGenerated = "DecoratorsClassesGenerated";
-        }
-
         public DecoratedCompilation(Project project)
         {
             this.project = project;
@@ -52,12 +46,8 @@ namespace Decorators.CodeInjections
                 var currentRoot = await doc.GetSyntaxRootAsync();
                 var oldSyntaxTree = currentRoot.SyntaxTree;
 
-                foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>())
-                {
-                    currentRoot = DecoratingMethods(node, currentRoot);
-                }
-
-
+                currentRoot = DecoratingSyntaxTree(currentRoot);
+                
                 if (oldSyntaxTree != currentRoot.SyntaxTree)  //si cambio el syntaxtree, creo un fichero nuevo con las modificaciones
                 {
                     this.compilation = compilation.ReplaceSyntaxTree(oldSyntaxTree, currentRoot.SyntaxTree);
@@ -77,59 +67,40 @@ namespace Decorators.CodeInjections
             }
             classesToGen = null;
             return currentProject;
+
         }
 
-        private void CleanDirectory(string directoryOutput)
+        private SyntaxNode DecoratingSyntaxTree(SyntaxNode currentRoot)
         {
-            try  //por si es la primera vez que no existe el directorio
+            foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => IsDecorated(n)))
             {
-                foreach (var item in Directory.GetFiles(directoryOutput))
-                {
-                    File.Delete(item);
-                }
-                Directory.Delete(directoryOutput);
+                currentRoot = DecoratingMethods(node, currentRoot);
             }
-            catch (Exception) {}
+            //si hace falta insertar el using
+            if(currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Any(n=>n.GetAnnotations("using").Any()))
+            {
+                currentRoot = AddUsing(currentRoot);
+            }
+            return currentRoot;
         }
 
-        public Compilation Decorating()
-        {
-            this.decorators = DecoratorCollector.GetDecorators(compilation, new CheckDecoratorWithAttr());
 
-            foreach (var oldSyntaxTree in compilation.SyntaxTrees)
-            {
-                var root = oldSyntaxTree.GetRoot();
-                foreach (var item in root.DescendantNodes())
-                {
-                    if (item is MethodDeclarationSyntax)
-                        root = DecoratingMethods(item as MethodDeclarationSyntax, root);
-                }
-                this.compilation = compilation.ReplaceSyntaxTree(oldSyntaxTree, root.SyntaxTree);
-            }
-            
-            return this.compilation;
-        }
-        //Para cada declaracion de metodo
         private SyntaxNode DecoratingMethods(MethodDeclarationSyntax node,SyntaxNode root)
         {
-            //Revisar si esta decorado
-            if (!node.DescendantNodes().OfType<AttributeSyntax>().Any(item => item.Name.ToString() == "DecorateWith"))
-                return root;
+            var originalclass = GetOriginalClass(node, root);
+            var modifiedClass = originalclass;  //los cambios se realizan sobre esta, necesito la clase sin cambios para poder reemplazarla
 
-            ClassDeclarationSyntax originalclass = node.Ancestors().OfType<ClassDeclarationSyntax>().First();   
-            var modifiedClass = originalclass;
             List<string> decoratorsNames = new List<string>();   //para no crear el mismo decorador especifico dos veces
             //siempre se inicializan despues
             MethodDeclarationSyntax method = null;
-            bool addUsing=false;
 
-            var decoEnumerable = node.DescendantNodes().OfType<AttributeSyntax>().Where((item) =>(new DecoratorAttrChecker()).IsDecorateAttr(item));
+            var decoEnumerable = node.DescendantNodes().OfType<AttributeSyntax>().Where((item) =>(new DecoratorAttrChecker()).IsDecorateAttr(item));////////////////////////////
             foreach (var decorator in decoEnumerable)
             {
                 //Buscando nombre del decorador
                 AttributeSyntax attr = node.DescendantNodes().OfType<AttributeSyntax>().First(item => item.Name.ToString() == "DecorateWith");
                 string nombreDecorador = ExtractDecoratorFullName(attr);
-
+                
                 if (!decoratorsNames.Contains(nombreDecorador))
                 {
                     decoratorsNames.Add(nombreDecorador); 
@@ -138,9 +109,13 @@ namespace Decorators.CodeInjections
                     var decoratorMethod = LookingForDecorator(root, nombreDecorador);
 
                     //Creando decorador con los tipos especificos de la funcion decorada
-                    method = CreateSpecificDecorator(decoratorMethod, node, root.SyntaxTree);
+                    method = CreateSpecificDecorator(decoratorMethod, node);
 
-                    addUsing = addUsing || method.GetAnnotations("using").Any();
+                    if(method.GetAnnotations("using").Any())
+                    {
+                        if (!this.classesToGen.Contains(node.ParameterList.Parameters.Count))  //guardando las clases que necesito generar
+                            classesToGen.Add(node.ParameterList.Parameters.Count);
+                    }
 
                     modifiedClass = modifiedClass.AddMembers(method);
                 }    
@@ -151,7 +126,7 @@ namespace Decorators.CodeInjections
              method = CreatePrivateMethod(node);
              modifiedClass = modifiedClass.AddMembers(method);
 
-            //Creando delegate estatico con la funcion decorada
+            //Creando delegate estatico con la funcion decorada ///////////////////////////////////////////////////////
             var field = CreateStaticDelegateDecorated(node, decoEnumerable);
             modifiedClass = modifiedClass.AddMembers(field);
 
@@ -160,20 +135,12 @@ namespace Decorators.CodeInjections
 
             root  = root.ReplaceNode(originalclass, modifiedClass);
             
-            //anadiendo los using necesarios en caso de que se genere la clase para los parametros
-            if (addUsing)
-            {
-                //var annotation = specificDeco.GetAnnotations("using").First();
-                var using1 = SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(this.namespaceClassesGenerated).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\n"));
-                SyntaxNode[] temp = { using1 };
-                root = root.InsertNodesBefore(root.ChildNodes().First(), temp);
-
-                if (!this.classesToGen.Contains(node.ParameterList.Parameters.Count))  //guardando las clases que necesito generar
-                    classesToGen.Add(node.ParameterList.Parameters.Count);
-            }
+            //Console.WriteLine(root.ToFullString());
 
             return root;
         }
+
+
 
         #region Funciones que editan el codigo
 
@@ -197,7 +164,7 @@ namespace Decorators.CodeInjections
 
         }
 
-
+        //return __FuncPrivate(param1,param2,...)
         private MethodDeclarationSyntax ChangingToDecoratedCode(MethodDeclarationSyntax node)
         {
             //quitando atributos de la funcion a decorar 
@@ -214,9 +181,9 @@ namespace Decorators.CodeInjections
 
             var invocacion = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__"+node.Identifier.Text + "Decorated"), argumentos);
             var temp1 = SyntaxFactory.ReturnStatement(invocacion);
-            temp1 = temp1.WithReturnKeyword(temp1.ReturnKeyword.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
-            BlockSyntax body = SyntaxFactory.Block(temp1);
-            return node.WithBody(body);
+            temp1 = temp1.WithReturnKeyword(temp1.ReturnKeyword.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node.Body.Statements[0]);
+            SyntaxList<StatementSyntax> stmt = new SyntaxList<StatementSyntax>(temp1);
+            return node.WithBody(node.Body.WithStatements(stmt));
         }
 
 
@@ -291,9 +258,9 @@ namespace Decorators.CodeInjections
 
         }
 
-        private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated, SyntaxTree tree)
+        private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated)
         {
-            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(tree), decoratorMethod, toDecorated);
+            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(decoratorMethod.SyntaxTree), decoratorMethod, toDecorated);
             var newDecorator = deco.Visit(decoratorMethod);
             return newDecorator as MethodDeclarationSyntax;
         }
@@ -325,6 +292,55 @@ namespace Decorators.CodeInjections
         private MethodDeclarationSyntax LookingForDecorator(SyntaxNode root, string nameDecorator)
         {
             return decorators.Where(n => n.Identifier.Text == nameDecorator).First();
+        }
+
+        private bool IsDecorated(MethodDeclarationSyntax node)
+        {
+            return (node.DescendantNodes().OfType<AttributeSyntax>().Any(item => item.Name.ToString() == "DecorateWith"));
+        }
+        private void CleanDirectory(string directoryOutput)
+        {
+            try  //por si es la primera vez que no existe el directorio
+            {
+                foreach (var item in Directory.GetFiles(directoryOutput))
+                {
+                    File.Delete(item);
+                }
+                Directory.Delete(directoryOutput);
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// Add using directive with generated classes namespace
+        /// </summary>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        private SyntaxNode AddUsing(SyntaxNode root)
+        {
+            var using1 = SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(this.namespaceClassesGenerated).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\n"));
+            SyntaxNode[] temp = { using1 };
+            root = root.InsertNodesBefore(root.ChildNodes().First(), temp);
+            return root;
+        }
+        private ClassDeclarationSyntax GetOriginalClass(MethodDeclarationSyntax method, SyntaxNode currentRoot)
+        {
+            ClassDeclarationSyntax originalclass = method.Ancestors().OfType<ClassDeclarationSyntax>().First();
+            return currentRoot.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(n => GetOriginalDefinition(n)== GetOriginalDefinition(originalclass) ).First();
+        }
+
+        private string GetOriginalDefinition(ClassDeclarationSyntax classNode)   //devuelve el nombre completo de la clase (Ej:mynamespace.class1.class2)
+        {
+            var containsClasses = classNode.Ancestors().OfType<ClassDeclarationSyntax>();
+            string originalDefinition = classNode.Identifier.Text;
+            if (containsClasses!=null)
+            {
+                foreach (var item in containsClasses)
+                {
+                    originalDefinition = item.Identifier.Text + "." + originalDefinition;
+                }
+            }
+            return classNode.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.ToFullString() + "." + originalDefinition;
         }
 
         #endregion

@@ -16,6 +16,7 @@ using Decorators.CodeInjections.ClassesToCreate;
 using Decorators.DecoratorsCollector;
 using DecoratorsDLL;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
+using DecoratorsDLL.DecoratorsClasses;
 
 namespace Decorators
 {
@@ -63,72 +64,72 @@ namespace Decorators
         
         #region Otros generateCode() usados para probar
         //mio para probar
-        private static void GenerateCode()
-        {
-            var code = new StreamReader("..\\..\\inFolder\\inFileParamsCollection.cs").ReadToEnd();
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
+        //private static void GenerateCode()
+        //{
+        //    var code = new StreamReader("..\\..\\inFolder\\inFileParamsCollection.cs").ReadToEnd();
+        //    SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
 
-            var root = (CompilationUnitSyntax)tree.GetRoot();
+        //    var root = (CompilationUnitSyntax)tree.GetRoot();
 
-            //var collector = new Metodos_decorados();
-            //collector.Visit(root);
+        //    //var collector = new Metodos_decorados();
+        //    //collector.Visit(root);
 
-            MetadataReference[] references =
-                {
-                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-                        .Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(DecorateWithAttribute).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Func<int, int>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Dictionary<object[], dynamic>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(DynamicParam).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(DynamicResult).Assembly.Location),
-                };
+        //    MetadataReference[] references =
+        //        {
+        //            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+        //                .Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(DecorateWithAttribute).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(Func<int, int>).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(Dictionary<object[], dynamic>).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(DynamicParam).Assembly.Location),
+        //            MetadataReference.CreateFromFile(typeof(DynamicResult).Assembly.Location),
+        //        };
 
-            var compilation = CSharpCompilation.Create(
-                assemblyName: "HelloWorld",
-                syntaxTrees: new[] { tree },
-                references: references);
+        //    var compilation = CSharpCompilation.Create(
+        //        assemblyName: "HelloWorld",
+        //        syntaxTrees: new[] { tree },
+        //        references: references);
 
-            DecoratedCompilation rewriter2 = new DecoratedCompilation(compilation);
+        //    DecoratedCompilation rewriter2 = new DecoratedCompilation(compilation);
 
-            var newSource = rewriter2.Decorating();
-            var newSourceOutput = new StreamWriter("..\\..\\outFolder\\outFile.cs");
+        //    var newSource = rewriter2.Decorating();
+        //    var newSourceOutput = new StreamWriter("..\\..\\outFolder\\outFile.cs");
 
-            foreach (var syntaxTree in newSource.SyntaxTrees)
-            {
-                newSourceOutput.Write(syntaxTree.GetRoot().ToFullString());
-            }
+        //    foreach (var syntaxTree in newSource.SyntaxTrees)
+        //    {
+        //        newSourceOutput.Write(syntaxTree.GetRoot().ToFullString());
+        //    }
 
-            newSourceOutput.Flush();
-            newSourceOutput.Close();
+        //    newSourceOutput.Flush();
+        //    newSourceOutput.Close();
             
-        }
+        //}
 
 
         //muy parecido al final que utilizare
-        private async static Task GenerateCode(Project project)
-        {
-            Directory.CreateDirectory(project.FilePath + "\\outFolder");
+        //private async static Task GenerateCode(Project project)
+        //{
+        //    Directory.CreateDirectory(project.FilePath + "\\outFolder");
 
-            var compilation = await project.GetCompilationAsync();
+        //    var compilation = await project.GetCompilationAsync();
 
-            DecoratedCompilation rewriter2 = new DecoratedCompilation(compilation);
-            var newCompilation = rewriter2.Decorating();
+        //    DecoratedCompilation rewriter2 = new DecoratedCompilation(compilation);
+        //    var newCompilation = rewriter2.Decorating();
 
-            foreach (var currentSyntaxTree in newCompilation.SyntaxTrees)
-            {
-                Console.WriteLine($"Diagnostics: {compilation.GetDiagnostics().Count()}" + $"\n {compilation.GetDiagnostics().Select(diag => diag.GetMessage()).Aggregate((a, b) => $"{a}\n{b}")}");
+        //    foreach (var currentSyntaxTree in newCompilation.SyntaxTrees)
+        //    {
+        //        Console.WriteLine($"Diagnostics: {compilation.GetDiagnostics().Count()}" + $"\n {compilation.GetDiagnostics().Select(diag => diag.GetMessage()).Aggregate((a, b) => $"{a}\n{b}")}");
                 
-                var newSourceOutput = new StreamWriter($"..\\..\\outFolder\\{currentSyntaxTree.FilePath.Split('\\').Last()}");
-                Console.WriteLine(currentSyntaxTree.GetRoot().ToFullString());
-                newSourceOutput.Write(currentSyntaxTree.GetRoot().ToFullString());
-                newSourceOutput.Flush();
-                newSourceOutput.Close();
+        //        var newSourceOutput = new StreamWriter($"..\\..\\outFolder\\{currentSyntaxTree.FilePath.Split('\\').Last()}");
+        //        Console.WriteLine(currentSyntaxTree.GetRoot().ToFullString());
+        //        newSourceOutput.Write(currentSyntaxTree.GetRoot().ToFullString());
+        //        newSourceOutput.Flush();
+        //        newSourceOutput.Close();
 
-            }
-        }
+        //    }
+        //}
         #endregion
 
 

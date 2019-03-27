@@ -29,9 +29,9 @@ namespace Decorators.CodeInjections
             this.paramsName = paramsName;
             this.paramClassGenerated = paramClassGenerated;
 
-            this.dynamicParam = "DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection.DynamicParamsCollection"; 
+            this.dynamicParam = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicParamsCollection"; 
             this.dynamicResult = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicResult";
-            this.toTupleParamsType = "DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection.DynamicParamsCollection.ToTupleParamsType";
+            this.toTupleParamsType = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicParamsCollection.ToTupleParamsType";
             this.toTupleMethodName = "ToTuple()";
 
             cantArgumentsToDecorated = toDecorated.ParameterList.Parameters.Count;
@@ -76,7 +76,7 @@ namespace Decorators.CodeInjections
             //generando el parametro para el decorador
             ParameterSyntax param = SyntaxFactory.Parameter(node.ParameterList.Parameters[0].Identifier).WithType(fun);
 
-            node = node.WithParameterList(SyntaxFactory.ParameterList().AddParameters(param));
+            node = node.WithParameterList(SyntaxFactory.ParameterList().AddParameters(param).WithTriviaFrom(node.ParameterList));
 
             //si hace falta generar clase, anado una annotation ("using", cantParams) para luego poder anadir la referencia correspondiente y generar la clase
             if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
@@ -180,7 +180,7 @@ namespace Decorators.CodeInjections
         //new Class()
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
-            var type = modeloSemantico.GetTypeInfo(node).Type as INamedTypeSymbol;
+            var type = modeloSemantico.GetTypeInfo(node).Type as ITypeSymbol;
             node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
 
             if (type.OriginalDefinition.ToDisplayString() == dynamicResult)
@@ -386,7 +386,7 @@ namespace Decorators.CodeInjections
                    
                     var memberAccessExpsIEnumerable = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChangeToTupleMember").Any());
                     newBody = newBody.ReplaceNodes(memberAccessExpsIEnumerable, (n1, n2) => MakingTupleValues());
-                    Console.WriteLine(newBody.ToFullString());
+                    //Console.WriteLine(newBody.ToFullString());
 
                 }
                 return newBody;

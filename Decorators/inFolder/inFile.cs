@@ -1,4 +1,4 @@
-﻿using DecoratorsDLL;
+﻿using DecoratorsDLL.DecoratorsClasses;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using System;
 using System.Collections;

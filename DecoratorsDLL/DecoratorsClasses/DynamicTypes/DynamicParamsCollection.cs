@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection
+namespace DecoratorsDLL.DecoratorsClasses.DynamicTypes
 {
     public class DynamicParamsCollection: IGenericTuple, IEnumerable
     {

@@ -43,8 +43,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DecoratorsClasses\Decorate.cs" />
-    <Compile Include="DecoratorsClasses\DynamicParamsCollection\DynamicParamsCollection.cs" />
-    <Compile Include="DecoratorsClasses\DynamicParamsCollection\IGenericTuple.cs" />
+    <Compile Include="DecoratorsClasses\DecoratorBaseClass.cs" />
+    <Compile Include="DecoratorsClasses\DynamicTypes\DynamicParamsCollection.cs" />
+    <Compile Include="DecoratorsClasses\DynamicTypes\IGenericTuple.cs" />
     <Compile Include="DecoratorsClasses\DynamicTypes\DynamicParam.cs" />
     <Compile Include="DecoratorsClasses\DynamicTypes\DynamicResult.cs" />
     <Compile Include="DecoratorsClasses\DynamicTypes\DynamicType.cs" />

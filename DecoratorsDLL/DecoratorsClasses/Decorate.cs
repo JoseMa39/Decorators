@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DecoratorsDLL
+namespace DecoratorsDLL.DecoratorsClasses
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class DecorateWithAttribute:Attribute

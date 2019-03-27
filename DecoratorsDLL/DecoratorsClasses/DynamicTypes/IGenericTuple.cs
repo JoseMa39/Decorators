@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DecoratorsDLL.DecoratorsClasses.DynamicParamsCollection
+namespace DecoratorsDLL.DecoratorsClasses.DynamicTypes
 {
     internal interface IGenericTuple
     {
