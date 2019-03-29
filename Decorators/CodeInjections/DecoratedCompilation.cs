@@ -72,8 +72,14 @@ namespace Decorators.CodeInjections
 
         private SyntaxNode DecoratingSyntaxTree(SyntaxNode currentRoot)
         {
+            foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>())
+            {
+                var other = compilation.GetSemanticModel(currentRoot.SyntaxTree);
+            }
             foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => IsDecorated(n)))
             {
+                
+
                 currentRoot = DecoratingMethods(node, currentRoot);
             }
             //si hace falta insertar el using
@@ -99,22 +105,28 @@ namespace Decorators.CodeInjections
             {
                 //Buscando nombre del decorador
                 AttributeSyntax attr = node.DescendantNodes().OfType<AttributeSyntax>().First(item => item.Name.ToString() == "DecorateWith");
+
                 string nombreDecorador = ExtractDecoratorFullName(attr);
                 
                 if (!decoratorsNames.Contains(nombreDecorador))
                 {
-                    decoratorsNames.Add(nombreDecorador); 
-                    
+                    decoratorsNames.Add(nombreDecorador);
+
                     //Buscando decorador
-                    var decoratorMethod = LookingForDecorator(root, nombreDecorador);
+                    var decoratorMethod = LookingForDecorator(nombreDecorador);
 
                     //Creando decorador con los tipos especificos de la funcion decorada
                     method = CreateSpecificDecorator(decoratorMethod, node);
 
                     if(method.GetAnnotations("using").Any())
                     {
-                        if (!this.classesToGen.Contains(node.ParameterList.Parameters.Count))  //guardando las clases que necesito generar
-                            classesToGen.Add(node.ParameterList.Parameters.Count);
+                        foreach (var item in method.GetAnnotations("using"))
+                        {
+                            int cantArgs = int.Parse(item.Data);
+                            
+                            if (!this.classesToGen.Contains(cantArgs))  //guardando las clases que necesito generar
+                                classesToGen.Add(cantArgs);
+                        }
                     }
 
                     modifiedClass = modifiedClass.AddMembers(method);
@@ -260,7 +272,7 @@ namespace Decorators.CodeInjections
 
         private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated)
         {
-            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(decoratorMethod.SyntaxTree), decoratorMethod, toDecorated);
+            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(decoratorMethod.SyntaxTree), compilation.GetSemanticModel(toDecorated.SyntaxTree), decoratorMethod, toDecorated);
             var newDecorator = deco.Visit(decoratorMethod);
             return newDecorator as MethodDeclarationSyntax;
         }
@@ -289,7 +301,7 @@ namespace Decorators.CodeInjections
                        ?.Expression.ToFullString();
         }
         //Busca el decorador
-        private MethodDeclarationSyntax LookingForDecorator(SyntaxNode root, string nameDecorator)
+        private MethodDeclarationSyntax LookingForDecorator(string nameDecorator)
         {
             return decorators.Where(n => n.Identifier.Text == nameDecorator).First();
         }
