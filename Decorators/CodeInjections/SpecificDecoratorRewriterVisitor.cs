@@ -12,7 +12,7 @@ namespace Decorators.CodeInjections
 {
     public class SpecificDecoratorRewriterVisitor : CSharpSyntaxRewriter
     {
-        private readonly SemanticModel modeloSemanticoDecorator, modeloSemanticoToDecorateMethod;
+        private readonly SemanticModel modeloSemanticoDecorator;
         readonly private MethodDeclarationSyntax decoratorMethod;
         readonly private MethodDeclarationSyntax toDecorated;
         private string currentArgsName, paramsName, dynamicParam, dynamicResult, paramClassGenerated, toTupleParamsType, toTupleMethodName;
@@ -24,11 +24,10 @@ namespace Decorators.CodeInjections
         //para cuando no es estatico
         readonly TypeSyntax[] specificDecoratorTypeParams;
 
-        public SpecificDecoratorRewriterVisitor(SemanticModel modeloSemanticoDecorator, SemanticModel modeloSemanticoToDecorateMethod , MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated
+        public SpecificDecoratorRewriterVisitor(SemanticModel modeloSemanticoDecorator, IMethodSymbol toDecoratedMethodSymbol, MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated
             , string paramsName = "__param", string paramClassGenerated = "ParamsGenerics")
         {
             this.modeloSemanticoDecorator = modeloSemanticoDecorator;
-            this.modeloSemanticoToDecorateMethod = modeloSemanticoToDecorateMethod;
             this.decoratorMethod = decoratorMethod;
             this.toDecorated = toDecorated;
 
@@ -41,7 +40,7 @@ namespace Decorators.CodeInjections
             this.toTupleMethodName = "ToTuple()";
 
             //para trabajar cuando no es estatico
-            this.toDecoratedMethodSymbol = modeloSemanticoToDecorateMethod.GetDeclaredSymbol(toDecorated);
+            this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
             //si es no es estatico necesito un parametro mas;
             cantArgumentsToDecorated = (this.toDecoratedMethodSymbol.IsStatic)? toDecorated.ParameterList.Parameters.Count: toDecorated.ParameterList.Parameters.Count + 1;
 

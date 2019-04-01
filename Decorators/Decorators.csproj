@@ -244,6 +244,7 @@
     </Compile>
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
     <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
+    <Compile Include="CodeInjections\ToDecoratedPrivateRewriter.cs" />
     <Compile Include="DecoratorsCollector\CheckDecoratorWithAttr.cs" />
     <Compile Include="DecoratorsCollector\DecoratorAttrChecker.cs" />
     <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />

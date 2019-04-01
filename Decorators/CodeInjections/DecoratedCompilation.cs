@@ -72,14 +72,8 @@ namespace Decorators.CodeInjections
 
         private SyntaxNode DecoratingSyntaxTree(SyntaxNode currentRoot)
         {
-            foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>())
-            {
-                var other = compilation.GetSemanticModel(currentRoot.SyntaxTree);
-            }
             foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => IsDecorated(n)))
             {
-                
-
                 currentRoot = DecoratingMethods(node, currentRoot);
             }
             //si hace falta insertar el using
@@ -100,6 +94,9 @@ namespace Decorators.CodeInjections
             //siempre se inicializan despues
             MethodDeclarationSyntax method = null;
 
+            var semanticModel = compilation.GetSemanticModel(node.SyntaxTree);
+            var methodSymbol = semanticModel.GetDeclaredSymbol(node);   //obteniendo la informacion semantica del metodo a decorar
+
             var decoEnumerable = node.DescendantNodes().OfType<AttributeSyntax>().Where((item) =>(new DecoratorAttrChecker()).IsDecorateAttr(item));////////////////////////////
             foreach (var decorator in decoEnumerable)
             {
@@ -116,7 +113,7 @@ namespace Decorators.CodeInjections
                     var decoratorMethod = LookingForDecorator(nombreDecorador);
 
                     //Creando decorador con los tipos especificos de la funcion decorada
-                    method = CreateSpecificDecorator(decoratorMethod, node);
+                    method = CreateSpecificDecorator(decoratorMethod, node, methodSymbol);
 
                     if(method.GetAnnotations("using").Any())
                     {
@@ -135,15 +132,15 @@ namespace Decorators.CodeInjections
             }
 
             //anadiendo funcion privada con el codigo de la funcion decorada
-             method = CreatePrivateMethod(node);
+             method = CreatePrivateMethod(node, semanticModel, methodSymbol);
              modifiedClass = modifiedClass.AddMembers(method);
 
             //Creando delegate estatico con la funcion decorada ///////////////////////////////////////////////////////
-            var field = CreateStaticDelegateDecorated(node, decoEnumerable);
+            var field = CreateStaticDelegateDecorated(node, decoEnumerable, methodSymbol);
             modifiedClass = modifiedClass.AddMembers(field);
 
             //Sustituyendo el codigo de la funcion a decorar (return staticDelegateDecorated(param1, ... , paramN))
-            modifiedClass = modifiedClass.ReplaceNode(modifiedClass.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n=> n.ToFullString() == node.ToFullString()).First(), ChangingToDecoratedCode(node));
+            modifiedClass = modifiedClass.ReplaceNode(modifiedClass.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n=> n.ToFullString() == node.ToFullString()).First(), ChangingToDecoratedCode(node,methodSymbol));
 
             root  = root.ReplaceNode(originalclass, modifiedClass);
             
@@ -157,33 +154,25 @@ namespace Decorators.CodeInjections
         #region Funciones que editan el codigo
 
         //anade el metodo privado con el mismo codigo q la funcion decorada y devuelve un classSyntaxNode con esa modificacion
-        private MethodDeclarationSyntax CreatePrivateMethod(MethodDeclarationSyntax node)
+        private MethodDeclarationSyntax CreatePrivateMethod(MethodDeclarationSyntax node, SemanticModel toDecoratedSemanticModel, IMethodSymbol toDecoratedSymbol)
         {
-            //agregando metodo privado y guardando en él el metodo a decorar
-            SyntaxToken name = SyntaxFactory.Identifier("__" + node.Identifier.ToString() + "Private");
-
-            //quitando el decorador en el nuevo metodo
-            var atributos = SyntaxFactory.SeparatedList<AttributeSyntax>(node.DescendantNodes().OfType<AttributeSyntax>().Where(n => n.Name.ToString() != "DecorateWith"));
-            AttributeListSyntax listaAtr = SyntaxFactory.AttributeList(atributos);
-            List<AttributeListSyntax> lista = new List<AttributeListSyntax>();
-            lista.Add(listaAtr);
-            SyntaxList<AttributeListSyntax> aux = SyntaxFactory.List<AttributeListSyntax>();
-
-            if (lista.Count>0)
-                aux.AddRange(lista);
-
-            return SyntaxFactory.MethodDeclaration(aux, node.Modifiers, node.ReturnType, node.ExplicitInterfaceSpecifier, name, node.TypeParameterList, node.ParameterList, node.ConstraintClauses, node.Body, node.SemicolonToken);
-
+            ToDecoratedPrivateRewriter rewriter = new ToDecoratedPrivateRewriter(node, toDecoratedSemanticModel, toDecoratedSymbol);
+            return rewriter.Visit(node) as MethodDeclarationSyntax;
         }
 
         //return __FuncPrivate(param1,param2,...)
-        private MethodDeclarationSyntax ChangingToDecoratedCode(MethodDeclarationSyntax node)
+        private MethodDeclarationSyntax ChangingToDecoratedCode(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
         {
             //quitando atributos de la funcion a decorar 
             node = node.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>());
 
             //Construyendo instruccion return decorador
             var argumentos = SyntaxFactory.ArgumentList();
+
+            if (!methodSymbol.IsStatic)  //cuando es de instancia hay que anadir this como parametro
+            {
+                argumentos = argumentos.AddArguments(SyntaxFactory.Argument(SyntaxFactory.ThisExpression()));
+            }
 
             foreach (var item in node.ParameterList.Parameters)
             {
@@ -200,42 +189,16 @@ namespace Decorators.CodeInjections
 
 
         //crea un delegado estatico que guarda la funcion decorada
-        private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, string decoratorName)
+      
+        private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs, IMethodSymbol methodSymbol)
         {
+            
             //creando lista con los argumentos de la funcion para crear el delegado
             var argumentList = SyntaxFactory.TypeArgumentList();
-            foreach (var item in node.ParameterList.Parameters)
-            {
-                argumentList = argumentList.AddArguments(item.Type);
-            }
-            argumentList = argumentList.AddArguments(node.ReturnType);
 
-            //func<int,int,int>
-            var fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);
+            if (!methodSymbol.IsStatic)
+                argumentList = argumentList.AddArguments(SyntaxFactory.IdentifierName(methodSymbol.ReceiverType.Name));
 
-
-
-            //__fibDecorator(__FibPrivate)
-            var varInitialization = SyntaxFactory.EqualsValueClause(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__" + decoratorName + node.Identifier.Text), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("__" + node.Identifier.Text + "Private")))));
-            
-            
-            //__FibDecorated = __fibMemoize(__FibPrivate)
-            var varDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier("__" + node.Identifier.Text + "Decorated")).WithInitializer(varInitialization);
-            
-            
-            //func<int,int,int> = __FibDecorated = __fibMemoize(__FibPrivate)
-            var varDeclaration = SyntaxFactory.VariableDeclaration(fun).AddVariables(varDeclarator);
-
-            //anadiendo public y static
-            return SyntaxFactory.FieldDeclaration(varDeclaration).AddModifiers(SyntaxFactory.Token(node.GetLeadingTrivia(), SyntaxKind.PublicKeyword,SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.Token(SyntaxFactory.ParseLeadingTrivia(""), SyntaxKind.StaticKeyword, SyntaxFactory.ParseTrailingTrivia(" ")));
-
-        }
-
-
-        private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs)
-        {
-            //creando lista con los argumentos de la funcion para crear el delegado
-            var argumentList = SyntaxFactory.TypeArgumentList();
             foreach (var item in node.ParameterList.Parameters)
             {
                 argumentList = argumentList.AddArguments(item.Type);
@@ -270,9 +233,9 @@ namespace Decorators.CodeInjections
 
         }
 
-        private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated)
+        private MethodDeclarationSyntax CreateSpecificDecorator(MethodDeclarationSyntax decoratorMethod, MethodDeclarationSyntax toDecorated, IMethodSymbol toDecoratedSymbol)
         {
-            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(decoratorMethod.SyntaxTree), compilation.GetSemanticModel(toDecorated.SyntaxTree), decoratorMethod, toDecorated);
+            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(compilation.GetSemanticModel(decoratorMethod.SyntaxTree), toDecoratedSymbol, decoratorMethod, toDecorated);
             var newDecorator = deco.Visit(decoratorMethod);
             return newDecorator as MethodDeclarationSyntax;
         }

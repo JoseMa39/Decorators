@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Decorators.DecoratorsCollector
 {
-    class DecoratorAttrChecker : IDecorateAttrChecker
+    internal class DecoratorAttrChecker : IDecorateAttrChecker
     {
         public bool IsDecorateAttr(AttributeSyntax attr)
         {
