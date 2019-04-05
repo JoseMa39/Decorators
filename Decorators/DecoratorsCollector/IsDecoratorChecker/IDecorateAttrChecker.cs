@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Decorators.DecoratorsCollector
+namespace Decorators.DecoratorsCollector.IsDecoratorChecker
 {
     internal interface IDecorateAttrChecker
     {

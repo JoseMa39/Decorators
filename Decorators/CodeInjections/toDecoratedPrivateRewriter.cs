@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Decorators.DecoratorsCollector;
+using Decorators.DecoratorsCollector.IsDecoratorChecker;
 
 namespace Decorators.CodeInjections
 {
@@ -106,6 +107,7 @@ namespace Decorators.CodeInjections
             return SyntaxFactory.ParameterList(separatedList).WithTriviaFrom(toDecoratedMethod.ParameterList);
         }
 
+        //dice si es un modificador de visibilidad distinto de private
         private bool IsAccesibilityModifiers(SyntaxToken m)
         {
             return m.Kind() == SyntaxKind.PublicKeyword || m.Kind() == SyntaxKind.ProtectedKeyword || m.Kind() == SyntaxKind.InternalKeyword;

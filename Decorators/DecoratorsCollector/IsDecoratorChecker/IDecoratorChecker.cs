@@ -1,10 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Decorators.DecoratorsCollector
+namespace Decorators.DecoratorsCollector.IsDecoratorChecker
 {
     internal interface IDecoratorChecker
     {
-        bool IsDecorator(MethodDeclarationSyntax node, SemanticModel model);
+        bool IsDecorator(SyntaxNode node, SemanticModel model);
     }
 }

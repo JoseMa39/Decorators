@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Decorators.DecoratorsCollector.IsDecoratorChecker;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Decorators.DecoratorsCollector.DecoratorClass;
 
 namespace Decorators.DecoratorsCollector
 {
@@ -26,21 +28,11 @@ namespace Decorators.DecoratorsCollector
                 var doc = project.GetDocument(docId);
                 var syntaxTree = await doc.GetSyntaxTreeAsync();
                 var root = await syntaxTree.GetRootAsync();
-                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node as MethodDeclarationSyntax, compilation.GetSemanticModel(syntaxTree) )));
+                var semanticModel = compilation.GetSemanticModel(syntaxTree) ;
+                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node as MethodDeclarationSyntax, semanticModel)));
             }
             return decorators;
         }
 
-        internal static IEnumerable<MethodDeclarationSyntax> GetDecorators(Compilation compilation, IDecoratorChecker checker)
-        {
-            List<MethodDeclarationSyntax> decorators = new List<MethodDeclarationSyntax>();
-            foreach (var syntaxTree in compilation.SyntaxTrees)
-            {
-                var root = syntaxTree.GetRoot();
-
-                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node as MethodDeclarationSyntax, compilation.GetSemanticModel(syntaxTree))));
-            }
-            return decorators;
-        }
     }
 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Decorators.CodeInjections.ClassesToCreate;
 using Decorators.DecoratorsCollector;
+using Decorators.DecoratorsCollector.IsDecoratorChecker;
 using Decorators.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -33,7 +34,7 @@ namespace Decorators.CodeInjections
         public async Task<Project> DecoratingProjectAsync(string outputRelPathModifiedFiles)
         {
             classesToGen = new List<int>();
-            this.decorators = await DecoratorCollector.GetDecorators(this.project, new CheckDecoratorWithAttr());
+            this.decorators = await DecoratorCollector.GetDecorators(this.project, new CheckIsDecorator());
             var currentProject = this.project;
             this.compilation = await currentProject.GetCompilationAsync();
 
