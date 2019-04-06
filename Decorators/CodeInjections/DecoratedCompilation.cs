@@ -92,7 +92,7 @@ namespace Decorators.CodeInjections
             var modifiedClass = originalclass;  //los cambios se realizan sobre esta, necesito la clase sin cambios para poder reemplazarla
 
             List<string> decoratorsNames = new List<string>();   //para no crear el mismo decorador especifico dos veces
-            //siempre se inicializan despues
+            //sssiempre se inicializan despuessss
             MethodDeclarationSyntax method = null;
 
             var semanticModel = compilation.GetSemanticModel(node.SyntaxTree);
