@@ -245,10 +245,11 @@
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
     <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
     <Compile Include="CodeInjections\ToDecoratedPrivateRewriter.cs" />
+    <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeClassToFunction.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\IDecorator.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\CheckIsDecorator.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\DecoratorAttrChecker.cs" />
-    <Compile Include="DecoratorsCollector\DecoratorClass\Decorator.cs" />
+    <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeFunctionToFunction.cs" />
     <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecoratorChecker.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecorateAttrChecker.cs" />

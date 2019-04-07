@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +10,13 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
 {
     internal interface IDecorator
     {
-        TypeDecorator Type { get; set; }
+        TypeDecorator Type { get;}
+
+        string Identifier { get;}
+
+        MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol);
+
+        ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr =null);
+
     }
 }

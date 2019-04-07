@@ -19,17 +19,19 @@ namespace Decorators.DecoratorsCollector
         /// <param name="project"></param>
         /// <param name="checker"></param>
         /// <returns></returns>
-        internal async static Task<IEnumerable<MethodDeclarationSyntax>> GetDecorators(Project project, IDecoratorChecker checker)
+        internal async static Task<IEnumerable<IDecorator>> GetDecorators(Project project, IDecoratorChecker checker)
         {
             var compilation =await project.GetCompilationAsync();
-            List<MethodDeclarationSyntax> decorators = new List<MethodDeclarationSyntax>();
+            List<IDecorator> decorators = new List<IDecorator>();
             foreach (var docId in project.DocumentIds)
             {
                 var doc = project.GetDocument(docId);
                 var syntaxTree = await doc.GetSyntaxTreeAsync();
                 var root = await syntaxTree.GetRootAsync();
-                var semanticModel = compilation.GetSemanticModel(syntaxTree) ;
-                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node as MethodDeclarationSyntax, semanticModel)));
+                var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node, semanticModel)).Select(n=> new DecoratorTypeFunctionToFunction(n, semanticModel)));
+                decorators.AddRange(root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(node => checker.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeClassToFunction(n, semanticModel)));
             }
             return decorators;
         }
