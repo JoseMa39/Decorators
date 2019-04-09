@@ -16,14 +16,15 @@ namespace Decorators.CodeInjections
         readonly MethodDeclarationSyntax toDecoratedMethod;
         readonly SemanticModel modeloSemanticoToDecoratedMethod;
         readonly IMethodSymbol toDecoratedMethodSymbol;
+        readonly IDecoratorChecker checker;
 
         readonly string instanceName;
-        public ToDecoratedPrivateRewriter(MethodDeclarationSyntax toDedecoratedMethod, SemanticModel modeloSemanticoToDecoratedMethod, IMethodSymbol toDecoratedMethodSymbol)
+        public ToDecoratedPrivateRewriter(MethodDeclarationSyntax toDedecoratedMethod, SemanticModel modeloSemanticoToDecoratedMethod, IMethodSymbol toDecoratedMethodSymbol, IDecoratorChecker checker)
         {
             this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
             this.modeloSemanticoToDecoratedMethod = modeloSemanticoToDecoratedMethod;
             this.toDecoratedMethod = toDedecoratedMethod;
-
+            this.checker = checker;
             instanceName = "instance";
 
         }
@@ -79,7 +80,7 @@ namespace Decorators.CodeInjections
         //Deja una lista con los atributos que no son de la dll de decoradores
         private SyntaxList<AttributeListSyntax> GetNoDecoratorAttrs()
         {
-            var atributos = SyntaxFactory.SeparatedList<AttributeSyntax>(this.toDecoratedMethod.DescendantNodes().OfType<AttributeSyntax>().Where(n => (new DecoratorAttrChecker()).IsDecorateAttr(n)));
+            var atributos = SyntaxFactory.SeparatedList<AttributeSyntax>(this.toDecoratedMethod.DescendantNodes().OfType<AttributeSyntax>().Where(n => checker.IsDecorateAttr(n,modeloSemanticoToDecoratedMethod)));
             AttributeListSyntax listaAtr = SyntaxFactory.AttributeList(atributos);
             List<AttributeListSyntax> lista = new List<AttributeListSyntax>();
             lista.Add(listaAtr);

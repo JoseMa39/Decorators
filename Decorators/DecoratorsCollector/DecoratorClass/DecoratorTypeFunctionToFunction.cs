@@ -28,18 +28,16 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         public string Identifier { get => this._decorator.Identifier.Text;}
         public TypeDecorator Type { get => type; }
 
-        public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr = null)
+        public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr)
         {
             var node = toDecorated as MethodDeclarationSyntax;
             
-            if (expr == null)
-                return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__" + this.Identifier + node.Identifier.Text), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("__" + node.Identifier.Text + "Private"))));
             return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__" + this.Identifier + node.Identifier.Text), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));
         }
 
         public MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
         {
-            SpecificDecoratorRewriterVisitor deco = new SpecificDecoratorRewriterVisitor(this.semanticModel, toDecoratedSymbol, this._decorator , toDecorated as MethodDeclarationSyntax);
+            SpecificDecoratorFuncRewriterVisitor deco = new SpecificDecoratorFuncRewriterVisitor(this.semanticModel, toDecoratedSymbol, this._decorator , toDecorated as MethodDeclarationSyntax);
             var newDecorator = deco.Visit(_decorator);
             return newDecorator as MethodDeclarationSyntax;
         }

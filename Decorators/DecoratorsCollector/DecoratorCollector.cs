@@ -31,7 +31,7 @@ namespace Decorators.DecoratorsCollector
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
                 decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => checker.IsDecorator(node, semanticModel)).Select(n=> new DecoratorTypeFunctionToFunction(n, semanticModel)));
-                decorators.AddRange(root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(node => checker.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeClassToFunction(n, semanticModel)));
+                decorators.AddRange(root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(node => checker.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeClassToFunction(n, semanticModel, checker)));
             }
             return decorators;
         }

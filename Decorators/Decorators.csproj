@@ -234,9 +234,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CodeInjections\Sin usar\DecoratorRewriter.cs" />
     <Compile Include="CodeInjections\DecoratedCompilation.cs" />
-    <Compile Include="CodeInjections\SpecificDecoratorRewriterVisitor.cs" />
+    <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorRewriter.cs" />
+    <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorClassRewriterVisitor.cs" />
+    <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorFuncRewriterVisitor.cs" />
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -244,15 +245,13 @@
     </Compile>
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
     <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
-    <Compile Include="CodeInjections\ToDecoratedPrivateRewriter.cs" />
+    <Compile Include="CodeInjections\VisitorsRewriters\ToDecoratedPrivateRewriter.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeClassToFunction.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\IDecorator.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\CheckIsDecorator.cs" />
-    <Compile Include="DecoratorsCollector\IsDecoratorChecker\DecoratorAttrChecker.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeFunctionToFunction.cs" />
     <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecoratorChecker.cs" />
-    <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecorateAttrChecker.cs" />
     <Compile Include="inFolder\inFile.cs" />
     <Compile Include="inFolder\inFileParamsCollection.cs" />
     <Compile Include="outFolder\outFile.cs" />
@@ -268,9 +267,7 @@
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.2.6.3\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.2.6.3\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CodeInjections\Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretor.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
