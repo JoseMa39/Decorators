@@ -13,6 +13,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
 {
     class DecoratorTypeClassToFunction : IDecorator
     {
+        //
         readonly ClassDeclarationSyntax _decorator;
         readonly SemanticModel semanticModel;
         IDecoratorChecker checker;
