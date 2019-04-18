@@ -135,7 +135,7 @@ namespace Decorators.CodeInjections
             modifiedClass = modifiedClass.AddMembers(method);
 
             //Creando delegate estatico con la funcion decorada ///////////////////////////////////////////////////////
-            var field = CreateStaticDelegateDecorated(node, decoEnumerable, methodSymbol,semanticModel);
+            var field = CreateStaticFieldDelegate(node, decoEnumerable, methodSymbol,semanticModel);
             modifiedClass = modifiedClass.AddMembers(field);
 
             //Sustituyendo el codigo de la funcion a decorar (return staticDelegateDecorated(param1, ... , paramN))
@@ -165,25 +165,26 @@ namespace Decorators.CodeInjections
             //quitando atributos de la funcion a decorar 
             node = node.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>());
 
-            //Construyendo instruccion return decorador
-            var argumentos = SyntaxFactory.ArgumentList();
-
-            if (!methodSymbol.IsStatic)  //cuando es de instancia hay que anadir this como parametro
-            {
-                argumentos = argumentos.AddArguments(SyntaxFactory.Argument(SyntaxFactory.ThisExpression()));
-            }
-
-            foreach (var item in node.ParameterList.Parameters)
-            {
-                var arg = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(item.Identifier.Text));
-                argumentos = argumentos.AddArguments(arg);
-            }
-
-            var invocacion = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__"+node.Identifier.Text + "Decorated"), argumentos);
+            var invocacion = MakingInvocationExpresionForToDecorated(node, methodSymbol);
             var temp1 = SyntaxFactory.ReturnStatement(invocacion);
             temp1 = temp1.WithReturnKeyword(temp1.ReturnKeyword.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node.Body.Statements[0]);
             SyntaxList<StatementSyntax> stmt = new SyntaxList<StatementSyntax>(temp1);
             return node.WithBody(node.Body.WithStatements(stmt));
+        }
+
+        //crea un delegado estatico dentro de una clase o sin ella en dependencia de si es gnerica en algun tipo la funcion decorada
+        private MemberDeclarationSyntax CreateStaticFieldDelegate(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs, IMethodSymbol methodSymbol, SemanticModel model)
+        {
+            var funcDelegate = CreateStaticDelegateDecorated(node, decoratorsAttrs, methodSymbol, model);
+
+            if (node.TypeParameterList.Parameters.Count > 0)   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
+            {
+                var classDeclaration = SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier("__" + node.Identifier.Text + "PrivateClass").WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")));
+                classDeclaration = classDeclaration.WithConstraintClauses(node.ConstraintClauses).WithTypeParameterList(node.TypeParameterList);
+                classDeclaration = classDeclaration.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
+                return classDeclaration.AddMembers(funcDelegate).WithTriviaFrom(node);
+            }
+            return funcDelegate;
         }
 
         //crea un delegado estatico que guarda la funcion decorada
@@ -225,7 +226,7 @@ namespace Decorators.CodeInjections
             var varDeclaration = SyntaxFactory.VariableDeclaration(fun).AddVariables(varDeclarator);
 
             //anadiendo public y static
-            return SyntaxFactory.FieldDeclaration(varDeclaration).AddModifiers(SyntaxFactory.Token(node.GetLeadingTrivia(), SyntaxKind.PublicKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.Token(SyntaxFactory.ParseLeadingTrivia(""), SyntaxKind.StaticKeyword, SyntaxFactory.ParseTrailingTrivia(" ")));
+            return SyntaxFactory.FieldDeclaration(varDeclaration).AddModifiers(SyntaxFactory.Token(node.GetLeadingTrivia(), SyntaxKind.PublicKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.Token(SyntaxFactory.ParseLeadingTrivia(""), SyntaxKind.StaticKeyword, SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node);
 
         }
 
@@ -244,6 +245,31 @@ namespace Decorators.CodeInjections
         private IDecorator LookingForDecorator(string nameDecorator)
         {
             return decorators.Where(n => n.Identifier == nameDecorator).First();
+        }
+
+        private InvocationExpressionSyntax MakingInvocationExpresionForToDecorated(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
+        {
+            //Construyendo instruccion return decorador
+            var argumentos = SyntaxFactory.ArgumentList();
+
+            if (!methodSymbol.IsStatic)  //cuando es de instancia hay que anadir this como parametro
+            {
+                argumentos = argumentos.AddArguments(SyntaxFactory.Argument(SyntaxFactory.ThisExpression()));
+            }
+
+            foreach (var item in node.ParameterList.Parameters)
+            {
+                var arg = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(item.Identifier.Text));
+                argumentos = argumentos.AddArguments(arg);
+            }
+
+            ExpressionSyntax expr = SyntaxFactory.IdentifierName("__" + node.Identifier.Text + "Decorated");
+            if (node.TypeParameterList.Parameters.Count > 0)   //si es generica entonces tengo hacer classgenerated<T1>.delegate(bla, bla2)
+            {
+                var genericExpr = SyntaxFactory.GenericName(SyntaxFactory.Identifier("__" + node.Identifier.Text + "PrivateClass"), SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList<TypeSyntax>(node.TypeParameterList.Parameters.Select(n => SyntaxFactory.IdentifierName(n.Identifier.Text)))));
+                expr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,genericExpr ,expr as SimpleNameSyntax);
+            }
+            return SyntaxFactory.InvocationExpression(expr, argumentos);
         }
 
         private void CleanDirectory(string directoryOutput)

@@ -35,13 +35,14 @@ namespace Decorators.CodeInjections
             }
 
             var separatedList = SyntaxFactory.SeparatedList<BaseTypeSyntax>();
-            node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated).WithTriviaFrom(node.Identifier).WithTrailingTrivia(node.BaseList.GetTrailingTrivia())).WithBaseList(null);   //para quitar que herede del decoratorAttribute
+            //node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated).WithTriviaFrom(node.Identifier).WithTrailingTrivia(node.BaseList.GetTrailingTrivia())).WithBaseList(null);   //para quitar que herede del decoratorAttribute
+            node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated)).WithBaseList(null);   //para quitar que herede del decoratorAttribute
 
             //si hace falta generar clase, anado una annotation ("using", cantParams) para luego poder anadir la referencia correspondiente y generar la clase
             if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
                 node = node.WithAdditionalAnnotations(new SyntaxAnnotation("using", cantArgumentsToDecorated.ToString()));
 
-            return node;
+            return node.WithConstraintClauses(toDecorated.ConstraintClauses).WithTypeParameterList(toDecorated.TypeParameterList).WithTriviaFrom(toDecorated);
         }
 
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node)

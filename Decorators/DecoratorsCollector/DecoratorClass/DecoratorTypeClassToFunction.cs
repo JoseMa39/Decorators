@@ -63,6 +63,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
 
         private ArgumentListSyntax GetParameters(MethodDeclarationSyntax methodToDecorated, AttributeSyntax attr)
         {
+            
             if (attr.ChildNodes().OfType<AttributeArgumentListSyntax>().Any())  //si tiene los argumentos en el attribute
             {
                 var argList = SyntaxFactory.ArgumentList();
@@ -91,8 +92,16 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
                         index++;
                         if (attribute == attr)
                         {
-                            var objectCreationAttr = methodToDecorated.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().Where(n => semanticModel.GetTypeInfo(n).Type.OriginalDefinition.ToDisplayString() == typeAttr.OriginalDefinition.ToDisplayString());
-                            return objectCreationAttr.Skip(index).First().ArgumentList;
+                            try
+                            {
+                                var objectCreationAttr = methodToDecorated.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().Where(n => semanticModel.GetTypeInfo(n).Type.OriginalDefinition.ToDisplayString() == typeAttr.OriginalDefinition.ToDisplayString());
+                                return objectCreationAttr.Skip(index).First().ArgumentList;
+                            }
+                            catch
+                            {
+                                return SyntaxFactory.ArgumentList();  //en caso de no encontrar ninguno
+                            }
+
                         }
                     }
                 }
