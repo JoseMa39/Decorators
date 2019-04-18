@@ -1,4 +1,5 @@
 ﻿using Decorators.CodeInjections;
+using Decorators.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,6 +24,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             type = TypeDecorator.Function;
         }
 
+        #region IDecorator
         public SyntaxNode DecoratorNode => _decorator;
 
         public string Identifier { get => this._decorator.Identifier.Text;}
@@ -31,8 +33,16 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr)
         {
             var node = toDecorated as MethodDeclarationSyntax;
-            
-            return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName("__" + this.Identifier + node.Identifier.Text), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));
+
+            string nameDecorator = GetNameSpecificDecorator(node.Identifier.Text);
+            TypeSyntax type;
+
+            if (SyntaxTools.HasGenericTypes(node))
+                type = SyntaxFactory.GenericName(SyntaxFactory.Identifier(nameDecorator), SyntaxTools.MakeArgsFromParams(node.TypeParameterList));
+            else type = SyntaxFactory.IdentifierName(nameDecorator);
+
+
+            return SyntaxFactory.InvocationExpression(type, SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));
         }
 
         public MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
@@ -41,5 +51,15 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             var newDecorator = deco.Visit(_decorator);
             return newDecorator as MethodDeclarationSyntax;
         }
+
+        #endregion
+
+        #region tools
+        private string GetNameSpecificDecorator(string nameMethodToDecorated)  //devuelve el nombre con que se generaran los decoradores de este tipo
+        {
+            return "__" + _decorator.Identifier.Text + nameMethodToDecorated;
+        }
+
+        #endregion
     }
 }

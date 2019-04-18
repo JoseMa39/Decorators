@@ -177,7 +177,7 @@ namespace Decorators.CodeInjections
         {
             var funcDelegate = CreateStaticDelegateDecorated(node, decoratorsAttrs, methodSymbol, model);
 
-            if (node.TypeParameterList.Parameters.Count > 0)   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
+            if (SyntaxTools.HasGenericTypes(node))   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
             {
                 var classDeclaration = SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier("__" + node.Identifier.Text + "PrivateClass").WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")));
                 classDeclaration = classDeclaration.WithConstraintClauses(node.ConstraintClauses).WithTypeParameterList(node.TypeParameterList);
@@ -211,8 +211,12 @@ namespace Decorators.CodeInjections
             foreach (var item in decoratorsAttrs.Reverse())
             {
                 var decorator = LookingForDecorator(this.checker.ExtractDecoratorFullNameFromAttr(item, model));
-                if (inv == null)
-                    inv = decorator.CreateInvocationToDecorator(node, methodSymbol, SyntaxFactory.IdentifierName("__" + node.Identifier.Text + "Private"), item);    // creando la invocacion al decorador
+                if (inv == null)  //si es el primero entonces recibe como parametro la funcion privada generada
+                {
+                    string namePrivateFunc = GetFuncPrivateName(node.Identifier.Text);
+                    var exp = (SyntaxTools.HasGenericTypes(node)) ? (ExpressionSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier(namePrivateFunc),SyntaxTools.MakeArgsFromParams(node.TypeParameterList)): SyntaxFactory.IdentifierName(namePrivateFunc) ;
+                    inv = decorator.CreateInvocationToDecorator(node, methodSymbol, exp , item);    // creando la invocacion al decorador
+                }
                 else inv = decorator.CreateInvocationToDecorator(node, methodSymbol, inv, item); 
             }
 
@@ -264,7 +268,7 @@ namespace Decorators.CodeInjections
             }
 
             ExpressionSyntax expr = SyntaxFactory.IdentifierName("__" + node.Identifier.Text + "Decorated");
-            if (node.TypeParameterList.Parameters.Count > 0)   //si es generica entonces tengo hacer classgenerated<T1>.delegate(bla, bla2)
+            if (SyntaxTools.HasGenericTypes(node))   //si es generica entonces tengo hacer classgenerated<T1>.delegate(bla, bla2)
             {
                 var genericExpr = SyntaxFactory.GenericName(SyntaxFactory.Identifier("__" + node.Identifier.Text + "PrivateClass"), SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList<TypeSyntax>(node.TypeParameterList.Parameters.Select(n => SyntaxFactory.IdentifierName(n.Identifier.Text)))));
                 expr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,genericExpr ,expr as SimpleNameSyntax);
@@ -315,6 +319,11 @@ namespace Decorators.CodeInjections
                 }
             }
             return classNode.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.ToFullString() + "." + originalDefinition;
+        }
+
+        private string GetFuncPrivateName(string identifier)
+        {
+            return "__" + identifier + "Private";
         }
 
         #endregion

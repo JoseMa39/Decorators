@@ -1,5 +1,6 @@
 ﻿using Decorators.CodeInjections;
 using Decorators.DecoratorsCollector.IsDecoratorChecker;
+using Decorators.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,7 +39,17 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr)
         {
             var methodToDecorated = toDecorated as MethodDeclarationSyntax;
-            var objectCreation = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName(GetNameSpecificDecorator(methodToDecorated.Identifier.Text)).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), GetParameters(methodToDecorated,attr), null);
+
+
+            string nameDecorator = GetNameSpecificDecorator(methodToDecorated.Identifier.Text);
+            TypeSyntax type;
+
+            if (SyntaxTools.HasGenericTypes(methodToDecorated))
+                type = SyntaxFactory.GenericName(SyntaxFactory.Identifier(nameDecorator), SyntaxTools.MakeArgsFromParams(methodToDecorated.TypeParameterList));
+            else type = SyntaxFactory.IdentifierName(nameDecorator);
+
+
+            var objectCreation = SyntaxFactory.ObjectCreationExpression(type.WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), GetParameters(methodToDecorated,attr), null);
             var parenthesizeddObjectCreation = SyntaxFactory.ParenthesizedExpression(objectCreation);
             var accessExpr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, parenthesizeddObjectCreation, SyntaxFactory.IdentifierName("Decorator"));
             return SyntaxFactory.InvocationExpression(accessExpr, SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));

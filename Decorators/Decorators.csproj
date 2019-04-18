@@ -258,6 +258,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\FilePathUtilities.cs" />
+    <Compile Include="Utilities\SyntaxTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
