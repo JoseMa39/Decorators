@@ -13,15 +13,15 @@ namespace Decorators.Utilities.ErrorLogger
         {
             diagnostics = new List<IDiagnostic>();
         }
-        public ErrorLog(IEnumerable<Diagnostic> ienumerable)
+        public ErrorLog(IEnumerable<IDiagnostic> ienumerable)
         {
             this.diagnostics = new List<IDiagnostic>(ienumerable);
         }
 
 
-        public void AddError(int line, string message, Severity severity)
+        public void AddError(string filePath, int line, string message, Severity severity)
         {
-            this.diagnostics.Add(new Diagnostic(line, message, severity));
+            this.diagnostics.Add(new DiagnosticMessage(filePath, line, message, severity));
         }
 
         public void AddError(IDiagnostic diag)

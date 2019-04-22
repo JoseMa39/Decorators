@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 namespace Decorators.Utilities.ErrorLogger
 {
     
-    public class Diagnostic:IDiagnostic
+    public class DiagnosticMessage : IDiagnostic
     {
-        public Diagnostic(int linePosition, string message, Severity severity)
+        public DiagnosticMessage(string filePath , int linePosition, string message, Severity severity)
         {
             this.Severity = severity;
             this.Message = message;
             this.LinePosition = linePosition;
+            this.FilePath = filePath;
         }
         public Severity Severity { get; set; }
         public string Message { get; set; }
 
         public int LinePosition { get; set; }
+
+        public string FilePath { get; set; }
 
     }
 }

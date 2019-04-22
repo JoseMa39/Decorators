@@ -16,5 +16,7 @@ namespace Decorators.Utilities.ErrorLogger
 
         int LinePosition { get; set; }
 
+        string FilePath { get; set; }
+
     }
 }

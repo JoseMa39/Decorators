@@ -8,7 +8,7 @@ namespace Decorators.Utilities.ErrorLogger
 {
     interface IErrorLog
     {
-        void AddError(int line, string message, Severity severity);
+        void AddError(string filePath, int line, string message, Severity severity);
 
         void AddError(IDiagnostic diag);
 

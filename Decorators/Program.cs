@@ -17,6 +17,8 @@ using Decorators.DecoratorsCollector;
 using DecoratorsDLL;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using DecoratorsDLL.DecoratorsClasses;
+using Decorators.Utilities.ErrorLogger;
+using Decorators.DecoratorsCollector.IsDecoratorChecker;
 
 namespace Decorators
 {
@@ -36,17 +38,18 @@ namespace Decorators
         {
             var workspace = MSBuildWorkspace.Create();
             var project = await workspace.OpenProjectAsync(path);
-            var decorator = new DecoratedCompilation(project);
+            var decorator = new DecoratedCompilation();
 
-            var newProject = await decorator.DecoratingProjectAsync("outFolder");
+            var errors = new ErrorLog();
+            var newProject = await decorator.DecoratingProjectAsync(project,new CheckIsDecorator(),"outFolder", errors);
 
             var compilation = await newProject.GetCompilationAsync();
 
             try
             {
-                foreach (var item in compilation.GetDiagnostics().Where(diag => diag.Severity == DiagnosticSeverity.Error))
+                foreach (var item in errors.GetDiagnostics().Where(diag => diag.Severity == Severity.Error))
                 {
-                    Console.WriteLine($"Error:  Line {item.Location.GetLineSpan().StartLinePosition.Line}  -->  {item.GetMessage()}");
+                    Console.WriteLine($"Error:  File: {item.FilePath} ,  Line {item.LinePosition}  -->  {item.Message}");
                 }
 
             }

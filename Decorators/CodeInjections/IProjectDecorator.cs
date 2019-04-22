@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Decorators.CodeInjections
 {
-    interface IProjectDecorator
+    internal interface IProjectDecorator
     {
         Task<Project> DecoratingProjectAsync(Project project, IDecoratorChecker decoratorRecognize, string outputRealPathModifiedFiles, IErrorLog log);
 

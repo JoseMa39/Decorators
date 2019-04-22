@@ -251,14 +251,13 @@
     <Compile Include="DecoratorsCollector\DecoratorClass\IDecorator.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\CheckIsDecorator.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeFunctionToFunction.cs" />
-    <Compile Include="DecoratorsCollector\DecoratorCollector.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecoratorChecker.cs" />
     <Compile Include="inFolder\inFile.cs" />
     <Compile Include="inFolder\inFileParamsCollection.cs" />
     <Compile Include="outFolder\outFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\ErrorLogger\Diagnostic.cs" />
+    <Compile Include="Utilities\ErrorLogger\DiagnosticMessage.cs" />
     <Compile Include="Utilities\ErrorLogger\ErrorLog.cs" />
     <Compile Include="Utilities\ErrorLogger\IDiagnostic.cs" />
     <Compile Include="Utilities\ErrorLogger\IErrorLog.cs" />

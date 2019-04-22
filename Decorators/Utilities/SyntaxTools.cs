@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Decorators.Utilities.ErrorLogger;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
@@ -22,11 +23,26 @@ namespace Decorators.Utilities
             return member.TypeParameterList != null && member.TypeParameterList.Parameters.Count > 0;
         }
 
+        internal static string FormatterStringNames(string identifier, string modifier)
+        {
+            return "__" + identifier + modifier;
+        }
+
 
         //construye <t2,t3> de args para genericNameSyntax a partir de <t2,t3> de parametros
         internal static TypeArgumentListSyntax MakeArgsFromParams(TypeParameterListSyntax parametersList)
         {
             return SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList<TypeSyntax>(parametersList.Parameters.Select(n => SyntaxFactory.IdentifierName(n.Identifier.Text))));
+        }
+
+        internal static bool CheckErrors(Compilation compilation, IErrorLog log) //chequea si el copmilation tiene algun error
+        {
+            if (compilation.GetDiagnostics().Where(n => n.Severity == DiagnosticSeverity.Error).Any())   //si el project tiene algun error de compilacion
+            {
+                log.AddErrors(compilation.GetDiagnostics().Where(n => n.Severity == DiagnosticSeverity.Error).Select(d => new DiagnosticMessage(d.Location.SourceTree.FilePath, d.Location.GetLineSpan().StartLinePosition.Line, d.GetMessage(), Severity.Error)));
+                return true;
+            }
+            return false;
         }
     }
 }
