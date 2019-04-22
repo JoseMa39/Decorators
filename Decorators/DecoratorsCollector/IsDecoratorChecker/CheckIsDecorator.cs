@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Decorators.DecoratorsCollector.DecoratorClass;
 using DecoratorsDLL.DecoratorsClasses;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using Microsoft.CodeAnalysis;
@@ -30,6 +31,7 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
             return IsDecoratorType(classSymbol, model);
         }
 
+        //busca si el tipo es descendiente de la baseClass
         bool IsDecoratorType(INamedTypeSymbol classSymbol, SemanticModel model)
         {
             var current = classSymbol;
@@ -72,6 +74,23 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
                        .OfType<InvocationExpressionSyntax>().FirstOrDefault(exp => exp.DescendantNodes().FirstOrDefault() is IdentifierNameSyntax identifierNode &&
                            identifierNode.Identifier.Text == "nameof")?.ArgumentList.Arguments.First()
                        ?.Expression.ToFullString();
+        }
+
+        public async Task<IEnumerable<IDecorator>> GetDecorators(Project project)
+        {
+            var compilation = await project.GetCompilationAsync();
+            List<IDecorator> decorators = new List<IDecorator>();
+            foreach (var docId in project.DocumentIds)
+            {
+                var doc = project.GetDocument(docId);
+                var syntaxTree = await doc.GetSyntaxTreeAsync();
+                var root = await syntaxTree.GetRootAsync();
+                var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+                decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => this.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeFunctionToFunction(n, semanticModel)));
+                decorators.AddRange(root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(node => this.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeClassToFunction(n, semanticModel, this)));
+            }
+            return decorators;
         }
 
         #endregion

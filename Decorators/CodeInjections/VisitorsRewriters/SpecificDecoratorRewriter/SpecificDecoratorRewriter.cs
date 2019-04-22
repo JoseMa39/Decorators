@@ -1,4 +1,5 @@
 ﻿using Decorators.CodeInjections.ClassesToCreate;
+using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,7 +19,6 @@ namespace Decorators.CodeInjections
         protected string currentArgsName, paramsName, dynamicParam, dynamicResult, paramClassGenerated, toTupleParamsType, toTupleMethodName;
         protected int cantArgumentsToDecorated;
 
-
         protected IMethodSymbol toDecoratedMethodSymbol;
 
         //para cuando no es estatico
@@ -32,16 +32,16 @@ namespace Decorators.CodeInjections
             this.paramsName = paramsName;
             this.paramClassGenerated = paramClassGenerated;
 
-            this.dynamicParam = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicParamsCollection";
-            this.dynamicResult = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicResult";
-            this.toTupleParamsType = "DecoratorsDLL.DecoratorsClasses.DynamicTypes.DynamicParamsCollection.ToTupleParamsType";
-            this.toTupleMethodName = "ToTuple()";
+            this.dynamicParam = typeof(DynamicParamsCollection).FullName;
+            this.dynamicResult = typeof(DynamicResult).FullName;
+            this.toTupleParamsType = typeof(DynamicParamsCollection.ToTupleParamsType).FullName.Replace('+','.'); // fullName al ser un tipo anidado me pone + en lugar de 0.   (DynamicParamsCollection+ToTupleParamsType)
+
+            this.toTupleMethodName = "ToTuple()";  
 
             //para trabajar cuando no es estatico
             this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
             //si es no es estatico necesito un parametro mas;
             cantArgumentsToDecorated = (this.toDecoratedMethodSymbol.IsStatic) ? toDecorated.ParameterList.Parameters.Count : toDecorated.ParameterList.Parameters.Count + 1;
-
 
             specificDecoratorTypeParams = new TypeSyntax[this.cantArgumentsToDecorated];
             FillDecoratorTypeParams();
@@ -83,7 +83,7 @@ namespace Decorators.CodeInjections
             node = base.VisitInvocationExpression(node) as InvocationExpressionSyntax;
 
             //falta considerar cuando la funcion se guarda desde un delegate
-            if (IsToDecoratedFunction(node))
+            if (isToDecorated)
             {
                 if (node.ArgumentList.Arguments[0].Expression.ToFullString() == currentArgsName) //toChange marca el nodo padre q se tendria q modificar
                 { //toChangeId marca el nodo particular a ser cambiado (ver si luego se puede quitar)
@@ -223,7 +223,7 @@ namespace Decorators.CodeInjections
         #endregion
 
         #region IsWrapperDecorators
-        //revisa si es un wrapper dentro del decorador
+        //revisa si es un wrapper dentro del decorador  (verifica que el tipo de retorno sea dynamicresult y tenga un parametro de tipo dynamicParamsCollection)
         protected bool IsWrapperDecorator(ParenthesizedLambdaExpressionSyntax node)
         {
             var symbol = modeloSemanticoDecorator.GetSymbolInfo(node).Symbol as IMethodSymbol;
@@ -233,14 +233,11 @@ namespace Decorators.CodeInjections
             if (node.ParameterList.Parameters.Count != 1)
                 return false;
 
-            ////falta revisar los parametros pero me esta dando problemas
+            var parameter = node.ParameterList.Parameters[0];
+            var paramSymbol = modeloSemanticoDecorator.GetDeclaredSymbol(parameter);
 
-            //var param = node.ChildNodes().OfType<ParameterListSyntax>().First().ChildNodes().OfType<ParameterSyntax>().First();
-            //var paramSymbol = modeloSemantico.GetTypeInfo(param).Type;
-
-            // Console.WriteLine(paramSymbol.Type.Name);
-            //if (paramSymbol.Name != decoratorParam )
-            //    return false;
+            if (paramSymbol.OriginalDefinition.ToDisplayString()!= this.dynamicParam)
+                return false;
 
             return true;
         }
@@ -276,10 +273,12 @@ namespace Decorators.CodeInjections
         }
 
 
-        //falta considerar cuando la funcion se guardo en otro delegate
+        //considera tambien cuando la funcion se gUARDA EN otro delegate
         protected bool IsToDecoratedFunction(InvocationExpressionSyntax node)
         {
-            if (node.Expression.ToFullString() == decoratorMethod.ParameterList.Parameters[0].Identifier.Text)
+            var methodSymbol = modeloSemanticoDecorator.GetTypeInfo(node.Expression).Type as INamedTypeSymbol;
+
+            if (methodSymbol != null && methodSymbol.ToDisplayString() == $"System.Func<{this.dynamicParam}, {this.dynamicResult}>")
                 return true;
 
             return false;

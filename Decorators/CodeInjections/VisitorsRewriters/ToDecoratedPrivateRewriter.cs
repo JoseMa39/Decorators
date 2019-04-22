@@ -11,6 +11,8 @@ using Decorators.DecoratorsCollector.IsDecoratorChecker;
 
 namespace Decorators.CodeInjections
 {
+
+    //visitor que construye el ast de la funcion a decorar (si esta es de instancia entonces se le anade un parametro y se cambian todas las referencias a this hacia ese parametro)
     class ToDecoratedPrivateRewriter: CSharpSyntaxRewriter
     {
         readonly MethodDeclarationSyntax toDecoratedMethod;

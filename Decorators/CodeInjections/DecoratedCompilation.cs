@@ -34,14 +34,15 @@ namespace Decorators.CodeInjections
             this.checker = new CheckIsDecorator();
         }
 
-        public async Task<Project> DecoratingProjectAsync(string outputRelPathModifiedFiles)
+        public async Task<Project> DecoratingProjectAsync(string outputRealPathModifiedFiles)
         {
             classesToGen = new List<int>();
-            this.decorators = await DecoratorCollector.GetDecorators(this.project, this.checker);
+            this.decorators = await this.checker.GetDecorators(this.project);
+
             var currentProject = this.project;
             this.compilation = await currentProject.GetCompilationAsync();
 
-            string directoryOutput = IOUtilities.BasePath(project.FilePath) + "\\" + outputRelPathModifiedFiles;
+            string directoryOutput = IOUtilities.BasePath(project.FilePath) + "\\" + outputRealPathModifiedFiles;
 
             CleanDirectory(directoryOutput);
 
@@ -56,7 +57,7 @@ namespace Decorators.CodeInjections
                 {
                     this.compilation = compilation.ReplaceSyntaxTree(oldSyntaxTree, currentRoot.SyntaxTree);
                     Directory.CreateDirectory(directoryOutput);
-                    IOUtilities.WriteSyntaxTreeInFile(IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRelPathModifiedFiles + "\\" + Path.GetFileName(oldSyntaxTree.FilePath), currentRoot.SyntaxTree);
+                    IOUtilities.WriteSyntaxTreeInFile(IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRealPathModifiedFiles + "\\" + Path.GetFileName(oldSyntaxTree.FilePath), currentRoot.SyntaxTree);
 
                     currentProject = currentProject.RemoveDocument(doc.Id);
                     currentProject = currentProject.AddDocument(doc.Name, currentRoot).Project;
@@ -66,7 +67,7 @@ namespace Decorators.CodeInjections
 
             foreach (var cantParams in this.classesToGen)
             {
-                string code = GenerateClass(cantParams, IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRelPathModifiedFiles);
+                string code = GenerateClass(cantParams, IOUtilities.BasePath(currentProject.FilePath) + "\\" + outputRealPathModifiedFiles);
                 currentProject = currentProject.AddDocument($"ParamsGenerics{cantParams}.cs", code).Project;
             }
             classesToGen = null;

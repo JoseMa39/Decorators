@@ -235,6 +235,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeInjections\DecoratedCompilation.cs" />
+    <Compile Include="CodeInjections\IProjectDecorator.cs" />
     <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorRewriter.cs" />
     <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorClassRewriterVisitor.cs" />
     <Compile Include="CodeInjections\VisitorsRewriters\SpecificDecoratorRewriter\SpecificDecoratorFuncRewriterVisitor.cs" />
@@ -257,6 +258,10 @@
     <Compile Include="outFolder\outFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\ErrorLogger\Diagnostic.cs" />
+    <Compile Include="Utilities\ErrorLogger\ErrorLog.cs" />
+    <Compile Include="Utilities\ErrorLogger\IDiagnostic.cs" />
+    <Compile Include="Utilities\ErrorLogger\IErrorLog.cs" />
     <Compile Include="Utilities\FilePathUtilities.cs" />
     <Compile Include="Utilities\SyntaxTools.cs" />
   </ItemGroup>

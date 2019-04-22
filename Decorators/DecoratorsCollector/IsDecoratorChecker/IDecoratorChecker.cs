@@ -1,5 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Decorators.DecoratorsCollector.DecoratorClass;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Decorators.DecoratorsCollector.IsDecoratorChecker
 {
@@ -28,5 +31,8 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
         /// <param name="semanticModel"></param>
         /// <returns></returns>
         string ExtractDecoratorFullNameFromAttr(AttributeSyntax attr, SemanticModel semanticModel);
+
+
+        Task<IEnumerable<IDecorator>> GetDecorators(Project project);
     }
 }
