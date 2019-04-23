@@ -82,7 +82,6 @@ namespace Decorators.CodeInjections
             bool isToDecorated = IsToDecoratedFunction(node);
             node = base.VisitInvocationExpression(node) as InvocationExpressionSyntax;
 
-            //falta considerar cuando la funcion se guarda desde un delegate
             if (isToDecorated)
             {
                 if (node.ArgumentList.Arguments[0].Expression.ToFullString() == currentArgsName) //toChange marca el nodo padre q se tendria q modificar
@@ -122,31 +121,7 @@ namespace Decorators.CodeInjections
             return node;
         }
 
-        //int a = ...;
-        //public override SyntaxNode VisitVariableDeclaration(VariableDeclarationSyntax node)
-        //{
-
-        //    var type = modeloSemanticoDecorator.GetTypeInfo(node.Type).Type as INamedTypeSymbol;
-        //    node = base.VisitVariableDeclaration(node) as VariableDeclarationSyntax;
-
-        //    if (type != null && type.OriginalDefinition.ToDisplayString() == dynamicParam)  //ver xq es necesario esto si en el visitor del identifierSyntax se soluciona
-        //    {
-        //        //multiple inicializacion, o si no esta inicializado
-        //        if (node.Variables.Count > 1 || node.Variables[0].Initializer == null)
-        //            return node.WithType(MakingGenericNameWithParams().WithLeadingTrivia(node.Type.GetLeadingTrivia()).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
-
-        //        //si tiene inicializacion entonces puedo ponerle var
-        //        return node.WithType(SyntaxFactory.IdentifierName("var").WithLeadingTrivia(node.Type.GetLeadingTrivia()).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
-        //    }
-
-
-        //    return node;
-
-        //}
-
         //new Class()
-
-
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
             var type = modeloSemanticoDecorator.GetTypeInfo(node).Type as ITypeSymbol;
@@ -292,7 +267,6 @@ namespace Decorators.CodeInjections
             for (int i = 0; i < paramArray.Length; i++)
             {
                 paramArray[i] = SyntaxFactory.Parameter(SyntaxFactory.Identifier("__param" + i)).WithType(this.specificDecoratorTypeParams[i]);
-                //var a = toDecorated.ParameterList.Parameters[i].WithIdentifier(SyntaxFactory.Identifier("__param" + i));
             }
             return paramArray;
         }
@@ -385,7 +359,7 @@ namespace Decorators.CodeInjections
                                 SyntaxFactory.EqualsValueClause(initializerExp))))).WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia);
         }
 
-        // Construye DynamicParamsCollection<int,int>
+        // Construye ParamsGenerics2<int,int>
         protected GenericNameSyntax MakingGenericNameWithParams()
         {
             var argumentList = SyntaxFactory.TypeArgumentList();

@@ -63,7 +63,6 @@ namespace Decorators.CodeInjections
                 currentArgsName = node.ParameterList.Parameters[0].Identifier.Text;
 
             node = base.VisitMethodDeclaration(node) as MethodDeclarationSyntax;
-            //si el metodo no es el decorador  (revisar,  me gustaria usar un atributo decorator)
 
             if (!isDecoratorMethod)  //si no es el decorador
             {

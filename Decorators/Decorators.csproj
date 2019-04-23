@@ -245,16 +245,12 @@
       <DependentUpon>DecoratorParamClassGeneretor.tt</DependentUpon>
     </Compile>
     <Compile Include="CodeInjections\ClassesToCreate\DecoratorParamClassGeneretorComplement.cs" />
-    <Compile Include="CodeInjections\ClassesToCreate\ParamsGenerics2.cs" />
     <Compile Include="CodeInjections\VisitorsRewriters\ToDecoratedPrivateRewriter.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeClassToFunction.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\IDecorator.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\CheckIsDecorator.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeFunctionToFunction.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecoratorChecker.cs" />
-    <Compile Include="inFolder\inFile.cs" />
-    <Compile Include="inFolder\inFileParamsCollection.cs" />
-    <Compile Include="outFolder\outFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\ErrorLogger\DiagnosticMessage.cs" />

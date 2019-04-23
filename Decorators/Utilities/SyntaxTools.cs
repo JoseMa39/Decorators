@@ -23,10 +23,29 @@ namespace Decorators.Utilities
             return member.TypeParameterList != null && member.TypeParameterList.Parameters.Count > 0;
         }
 
+        #region Constructors Names Functions
+        internal static string GetFuncPrivateName(string identifier)
+        {
+            return FormatterStringNames(identifier, "Private");
+        }
+
+        internal static string GetStaticDelegatePrivateName(string identifier)
+        {
+            return FormatterStringNames(identifier, "Decorated");
+        }
+
+        internal static string GetStaticClassPrivateName(string identifier)
+        {
+            return FormatterStringNames(identifier, "PrivateClass");
+        }
+
         internal static string FormatterStringNames(string identifier, string modifier)
         {
             return "__" + identifier + modifier;
         }
+
+        #endregion
+
 
 
         //construye <t2,t3> de args para genericNameSyntax a partir de <t2,t3> de parametros

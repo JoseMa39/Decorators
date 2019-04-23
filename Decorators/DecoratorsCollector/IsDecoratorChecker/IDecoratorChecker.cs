@@ -32,7 +32,11 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
         /// <returns></returns>
         string ExtractDecoratorFullNameFromAttr(AttributeSyntax attr, SemanticModel semanticModel);
 
-
+        /// <summary>
+        /// extract all decorators declarated in project
+        /// </summary>
+        /// <param name="project"></param>
+        /// <returns></returns>
         Task<IEnumerable<IDecorator>> GetDecorators(Project project);
     }
 }

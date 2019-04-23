@@ -69,7 +69,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         #region Tools
         private string GetNameSpecificDecorator(string nameMethodToDecorated)  //devuelve el nombre con que se generaran los decoradores de este tipo
         {
-            return "__" + _decorator.Identifier.Text + nameMethodToDecorated;
+            return SyntaxTools.FormatterStringNames(_decorator.Identifier.Text, nameMethodToDecorated);
         }
 
         private ArgumentListSyntax GetParameters(MethodDeclarationSyntax methodToDecorated, AttributeSyntax attr)

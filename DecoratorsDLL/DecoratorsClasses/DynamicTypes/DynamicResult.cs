@@ -13,6 +13,21 @@ namespace DecoratorsDLL.DecoratorsClasses.DynamicTypes
     {
         public DynamicResult(object value) : base(value) { }
 
+        public override bool Equals(object obj)
+        {
+            if (!(obj is DynamicResult other))
+            {
+                return false;
+            }
+
+            return Value.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
         public static DynamicResult operator +(DynamicResult left, DynamicResult right)
         {
             return new DynamicResult(left.Value + right.Value);

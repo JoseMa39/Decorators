@@ -14,7 +14,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-
 namespace Decorators.CodeInjections
 {
     class DecoratedCompilation:IProjectDecorator
@@ -24,6 +23,7 @@ namespace Decorators.CodeInjections
         IEnumerable<IDecorator> decorators;
         List<int> classesToGen;
         IDecoratorChecker checker;
+        IErrorLog log;
 
         string namespaceClassesGenerated;
 
@@ -35,6 +35,7 @@ namespace Decorators.CodeInjections
         #region Decorating Functions
         public async Task<Project> DecoratingProjectAsync(Project project, IDecoratorChecker decoratorRecognize, string outputRealPathModifiedFiles, IErrorLog log)
         {
+            this.log = log;
             this.checker = decoratorRecognize;
             classesToGen = new List<int>();
             this.decorators = await this.checker.GetDecorators(project);
@@ -47,7 +48,6 @@ namespace Decorators.CodeInjections
 
             string directoryOutput = IOUtilities.BasePath(project.FilePath) + "\\" + outputRealPathModifiedFiles;
             CleanDirectory(directoryOutput);  //limpiando carpeta de salida
-
 
             foreach (var doc in project.Documents)
             {
@@ -65,7 +65,6 @@ namespace Decorators.CodeInjections
                     currentProject = currentProject.RemoveDocument(doc.Id);
                     currentProject = currentProject.AddDocument(doc.Name, currentRoot).Project;
                 }
-
             }
 
 
@@ -93,7 +92,6 @@ namespace Decorators.CodeInjections
             return currentRoot;
         }
 
-
         private SyntaxNode DecoratingMethods(MethodDeclarationSyntax node,SyntaxNode root, SemanticModel semanticModel)
         {
             var originalclass = GetOriginalClass(node, root);
@@ -101,7 +99,7 @@ namespace Decorators.CodeInjections
 
             List<string> decoratorsNames = new List<string>();   //para no crear el mismo decorador especifico dos veces
             var methodSymbol = semanticModel.GetDeclaredSymbol(node);   //obteniendo la informacion semantica del metodo a decorar
-
+            bool thereAreErrors = false;  //guarda si hay errores en este syntaxtree (si se hace referencia a algun decorador que no existe, el resto serian errores de compilacion)
 
             #region Generating specific decorators
             var decoEnumerable = node.DescendantNodes().OfType<AttributeSyntax>().Where((item) => this.checker.IsDecorateAttr(item,semanticModel));
@@ -115,7 +113,13 @@ namespace Decorators.CodeInjections
                     decoratorsNames.Add(nombreDecorador);
                     
                     //Buscando decorador
-                    var decoratorMethod = LookingForDecorator(nombreDecorador);
+                    var decoratorMethod = LookingForDecorator(nombreDecorador, decoratorAttr);
+                    if (decoratorMethod == null)
+                    {
+                        thereAreErrors = true;
+                        continue;
+                    }
+
 
                     //Creando decorador con los tipos especificos de la funcion decorada
                     MemberDeclarationSyntax memberToAdd = decoratorMethod.CreateSpecificDecorator(node, methodSymbol);
@@ -132,10 +136,11 @@ namespace Decorators.CodeInjections
                     }
                     modifiedClass = modifiedClass.AddMembers(memberToAdd);  //revisar
                 }    
-
             }
             #endregion
 
+            if (thereAreErrors)
+                return root;
 
             #region adding private function which contain decorated function code
 
@@ -195,7 +200,7 @@ namespace Decorators.CodeInjections
 
             if (SyntaxTools.HasGenericTypes(node))   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
             {
-                var classDeclaration = SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier(GetStaticClassPrivateName(node.Identifier.Text)).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")));
+                var classDeclaration = SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier(SyntaxTools.GetStaticClassPrivateName(node.Identifier.Text)).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")));
                 classDeclaration = classDeclaration.WithConstraintClauses(node.ConstraintClauses).WithTypeParameterList(node.TypeParameterList);
                 classDeclaration = classDeclaration.AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
                 return classDeclaration.AddMembers(funcDelegate).WithTriviaFrom(node);
@@ -206,7 +211,6 @@ namespace Decorators.CodeInjections
         //crea un delegado estatico que guarda la funcion decorada
         private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs, IMethodSymbol methodSymbol, SemanticModel model)
         {
-            
             //creando lista con los argumentos de la funcion para crear el delegado
             var argumentList = SyntaxFactory.TypeArgumentList();
 
@@ -228,7 +232,7 @@ namespace Decorators.CodeInjections
                 var decorator = LookingForDecorator(this.checker.ExtractDecoratorFullNameFromAttr(item, model));
                 if (inv == null)  //si es el primero entonces recibe como parametro la funcion privada generada
                 {
-                    string namePrivateFunc = GetFuncPrivateName(node.Identifier.Text);
+                    string namePrivateFunc = SyntaxTools.GetFuncPrivateName(node.Identifier.Text);
                     var exp = (SyntaxTools.HasGenericTypes(node)) ? (ExpressionSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier(namePrivateFunc),SyntaxTools.MakeArgsFromParams(node.TypeParameterList)): SyntaxFactory.IdentifierName(namePrivateFunc) ;
                     inv = decorator.CreateInvocationToDecorator(node, methodSymbol, exp , item);    // creando la invocacion al decorador
                 }
@@ -239,7 +243,7 @@ namespace Decorators.CodeInjections
             var varInitialization = SyntaxFactory.EqualsValueClause(inv);
 
             //__FibDecorated = __fibMemoize(__FibPrivate)
-            var varDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(GetStaticDelegatePrivateName(node.Identifier.Text))).WithInitializer(varInitialization);
+            var varDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(SyntaxTools.GetStaticDelegatePrivateName(node.Identifier.Text))).WithInitializer(varInitialization);
 
             //func<int,int,int> = __FibDecorated = __fibMemoize(__FibPrivate)
             var varDeclaration = SyntaxFactory.VariableDeclaration(fun).AddVariables(varDeclarator);
@@ -266,6 +270,7 @@ namespace Decorators.CodeInjections
             }
             return currentProject;
         }
+
         private string GenerateClass(int cantParams, string path)
         {
             DecoratorParamClassGeneretor page = new DecoratorParamClassGeneretor(cantParams);
@@ -278,9 +283,22 @@ namespace Decorators.CodeInjections
 
         #region Useful functions
         //Busca el decorador
-        private IDecorator LookingForDecorator(string nameDecorator)
+        private IDecorator LookingForDecorator(string nameDecorator, AttributeSyntax decoratorAttr = null)
         {
-            return decorators.Where(n => n.Identifier == nameDecorator).First();
+            try
+            {
+                return decorators.Where(n => n.Identifier == nameDecorator).First();
+            }
+            catch (Exception)   //si no existe el decorador
+            {
+                if (decoratorAttr!=null)
+                {
+                    var location = decoratorAttr.GetLocation();
+                    this.log.AddError(location.SourceTree.FilePath,location.GetLineSpan().StartLinePosition.Line, $"Decorator {nameDecorator} don't exist", Severity.Error);
+
+                }
+                return null;
+            }
         }
 
         private InvocationExpressionSyntax MakingInvocationExpresionForToDecorated(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
@@ -299,10 +317,10 @@ namespace Decorators.CodeInjections
                 argumentos = argumentos.AddArguments(arg);
             }
 
-            ExpressionSyntax expr = SyntaxFactory.IdentifierName(GetStaticDelegatePrivateName(node.Identifier.Text));
+            ExpressionSyntax expr = SyntaxFactory.IdentifierName(SyntaxTools.GetStaticDelegatePrivateName(node.Identifier.Text));
             if (SyntaxTools.HasGenericTypes(node))   //si es generica entonces tengo hacer classgenerated<T1>.delegate(bla, bla2)
             {
-                var genericExpr = SyntaxFactory.GenericName(SyntaxFactory.Identifier(GetStaticClassPrivateName(node.Identifier.Text)), SyntaxTools.MakeArgsFromParams(node.TypeParameterList));
+                var genericExpr = SyntaxFactory.GenericName(SyntaxFactory.Identifier(SyntaxTools.GetStaticClassPrivateName(node.Identifier.Text)), SyntaxTools.MakeArgsFromParams(node.TypeParameterList));
                 expr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,genericExpr ,expr as SimpleNameSyntax);
             }
             return SyntaxFactory.InvocationExpression(expr, argumentos);
@@ -355,22 +373,6 @@ namespace Decorators.CodeInjections
 
         #endregion
 
-        #region Constructors Names Functions
-        private string GetFuncPrivateName(string identifier)
-        {
-            return SyntaxTools.FormatterStringNames(identifier, "Private");
-        }
-
-        private string GetStaticDelegatePrivateName(string identifier)
-        {
-            return SyntaxTools.FormatterStringNames(identifier, "Decorated");
-        }
-
-        private string GetStaticClassPrivateName(string identifier)
-        {
-            return SyntaxTools.FormatterStringNames(identifier, "PrivateClass");
-        }
-
-        #endregion
+        
     }
 }

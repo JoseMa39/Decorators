@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Decorators.DecoratorsCollector;
 using Decorators.DecoratorsCollector.IsDecoratorChecker;
+using Decorators.Utilities;
 
 namespace Decorators.CodeInjections
 {
@@ -21,11 +22,11 @@ namespace Decorators.CodeInjections
         readonly IDecoratorChecker checker;
 
         readonly string instanceName;
-        public ToDecoratedPrivateRewriter(MethodDeclarationSyntax toDedecoratedMethod, SemanticModel modeloSemanticoToDecoratedMethod, IMethodSymbol toDecoratedMethodSymbol, IDecoratorChecker checker)
+        public ToDecoratedPrivateRewriter(MethodDeclarationSyntax toDecoratedMethod, SemanticModel modeloSemanticoToDecoratedMethod, IMethodSymbol toDecoratedMethodSymbol, IDecoratorChecker checker)
         {
             this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
             this.modeloSemanticoToDecoratedMethod = modeloSemanticoToDecoratedMethod;
-            this.toDecoratedMethod = toDedecoratedMethod;
+            this.toDecoratedMethod = toDecoratedMethod;
             this.checker = checker;
             instanceName = "instance";
 
@@ -35,7 +36,7 @@ namespace Decorators.CodeInjections
         #region Visitor Functions
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            SyntaxToken name = SyntaxFactory.Identifier("__" + node.Identifier.ToString() + "Private");
+            SyntaxToken name = SyntaxFactory.Identifier(SyntaxTools.GetFuncPrivateName(node.Identifier.Text));
             var attrList = GetNoDecoratorAttrs();
 
             if (toDecoratedMethodSymbol.IsStatic && node == toDecoratedMethod)  //si es estatico solo hay que cambiarle el nombre
@@ -54,6 +55,7 @@ namespace Decorators.CodeInjections
         {
             return SyntaxFactory.IdentifierName(this.instanceName).WithTriviaFrom(node);
         }
+
 
         //revisa donde quiera que haga falta poner instance.
         public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
