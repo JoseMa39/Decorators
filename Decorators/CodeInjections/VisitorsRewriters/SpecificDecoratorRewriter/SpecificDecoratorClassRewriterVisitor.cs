@@ -60,7 +60,10 @@ namespace Decorators.CodeInjections
 
             //para saber el nombre con que se trata a los parametros dentro de la funcion
             if (isWrapper)
+            {
                 currentArgsName = node.ParameterList.Parameters[0].Identifier.Text;
+                currentparamsName = this.paramsName + (++this.deep);
+            }
 
             node = base.VisitMethodDeclaration(node) as MethodDeclarationSyntax;
 
@@ -74,6 +77,7 @@ namespace Decorators.CodeInjections
                     //actualizando tipo de retorno
                     node = node.WithParameterList(parameters.AddParameters(paramArray)).WithReturnType(toDecorated.ReturnType);
                     node = node.WithBody(WorkingWithWrapperFunction(node.Body) as BlockSyntax);
+                    currentparamsName = this.paramsName + (--this.deep);
                 }
                 currentArgsName = temp;
                 return node;

@@ -16,8 +16,8 @@ namespace Decorators.CodeInjections
         protected  SemanticModel modeloSemanticoDecorator;
         protected MethodDeclarationSyntax decoratorMethod;
         protected MethodDeclarationSyntax toDecorated;
-        protected string currentArgsName, paramsName, dynamicParam, dynamicResult, paramClassGenerated, toTupleParamsType, toTupleMethodName;
-        protected int cantArgumentsToDecorated;
+        protected string currentArgsName,paramsName, currentparamsName, dynamicParam, dynamicResult, dynamicResultValue, paramClassGenerated, toTupleParamsType, toTupleMethodName;
+        protected int cantArgumentsToDecorated, deep;
 
         protected IMethodSymbol toDecoratedMethodSymbol;
 
@@ -31,12 +31,15 @@ namespace Decorators.CodeInjections
 
             this.paramsName = paramsName;
             this.paramClassGenerated = paramClassGenerated;
+            this.deep = 0;  //para controlar la profundidad de las funciones y no repetir el nombre de los parametros
+            this.currentparamsName = paramsName + deep;
 
             this.dynamicParam = typeof(DynamicParamsCollection).FullName;
             this.dynamicResult = typeof(DynamicResult).FullName;
             this.toTupleParamsType = typeof(DynamicParamsCollection.ToTupleParamsType).FullName.Replace('+','.'); // fullName al ser un tipo anidado me pone + en lugar de 0.   (DynamicParamsCollection+ToTupleParamsType)
 
-            this.toTupleMethodName = "ToTuple()";  
+            this.toTupleMethodName = "ToTuple()";
+            this.dynamicResultValue = "Value";
 
             //para trabajar cuando no es estatico
             this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
@@ -52,13 +55,15 @@ namespace Decorators.CodeInjections
 
         public override SyntaxNode VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
         {
-            SimpleLambdaExpressionSyntax a;
             bool isWrapper = IsWrapperDecorator(node);
             string temp = currentArgsName;
 
             //para saber el nombre con que se trata a los parametros dentro de la funcion
             if (isWrapper)
+            {
                 currentArgsName = node.ParameterList.Parameters[0].Identifier.Text;
+                currentparamsName = this.paramsName + (++this.deep);
+            }
 
             node = base.VisitParenthesizedLambdaExpression(node) as ParenthesizedLambdaExpressionSyntax;
 
@@ -71,6 +76,36 @@ namespace Decorators.CodeInjections
                 //actualizando tipo de retorno
                 node = node.WithParameterList(parameters.AddParameters(paramArray));
                 node = node.WithBody(WorkingWithWrapperFunction(node.Body));
+                currentparamsName = this.paramsName + (--this.deep);
+            }
+            currentArgsName = temp;
+            return node;
+        }
+
+        public override SyntaxNode VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
+        {
+            bool isWrapper = IsWrapperDecorator(node);
+            string temp = currentArgsName;
+
+            //para saber el nombre con que se trata a los parametros dentro de la funcion
+            if (isWrapper)
+            {
+                currentArgsName = node.Parameter.Identifier.Text;
+                currentparamsName = this.paramsName + (++this.deep);
+            }
+
+            node = base.VisitSimpleLambdaExpression(node) as SimpleLambdaExpressionSyntax;
+
+            if (isWrapper)  //reconociendo se se trata de un wrapper a la funcion decorada
+            {
+                var parameters = SyntaxFactory.ParameterList();
+
+                //creando lista de parametros (el nombre de cada uno es __param0, __param1, etc)
+                var paramArray = MakingParameters();
+                //actualizando tipo de retorno
+                var result =  SyntaxFactory.ParenthesizedLambdaExpression(parameters.AddParameters(paramArray), WorkingWithWrapperFunction(node.Body));
+                currentparamsName = this.paramsName + (--this.deep);
+                return result;
             }
             currentArgsName = temp;
             return node;
@@ -193,6 +228,17 @@ namespace Decorators.CodeInjections
 
         }
 
+        public override SyntaxNode VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            var type = modeloSemanticoDecorator.GetTypeInfo(node.Expression).Type as ITypeSymbol;
+
+            node =  base.VisitMemberAccessExpression(node) as MemberAccessExpressionSyntax;
+            if (type.OriginalDefinition.ToDisplayString() == dynamicResult && node.Name.Identifier.Text == this.dynamicResultValue)
+                return node.Expression;
+
+            return node;
+        }
+
 
 
         #endregion
@@ -217,6 +263,21 @@ namespace Decorators.CodeInjections
             return true;
         }
 
+        protected bool IsWrapperDecorator(SimpleLambdaExpressionSyntax node)
+        {
+            var symbol = modeloSemanticoDecorator.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            if (symbol.ReturnType.OriginalDefinition.ToDisplayString() != dynamicResult)
+                return false;
+
+            var parameter = node.Parameter;
+            var paramSymbol = modeloSemanticoDecorator.GetDeclaredSymbol(parameter);
+
+            if (paramSymbol.OriginalDefinition.ToDisplayString() != this.dynamicParam)
+                return false;
+
+            return true;
+        }
+
         protected bool IsWrapperDecorator(GenericNameSyntax node)
         {
             if (node.Identifier.Text != "Func" || node.Arity != 2)
@@ -226,6 +287,9 @@ namespace Decorators.CodeInjections
             var type = modeloSemanticoDecorator.GetTypeInfo(node.TypeArgumentList.Arguments[1]).Type as ITypeSymbol;
             if ((typeParams.OriginalDefinition.ToDisplayString() != dynamicParam) || (type.OriginalDefinition.ToDisplayString() != dynamicResult))
                 return false;
+
+            //if ((typeParams.OriginalDefinition.ToDisplayString() != dynamicParam))
+            //    return false;
 
             return true;
         }
@@ -266,7 +330,7 @@ namespace Decorators.CodeInjections
             ParameterSyntax[] paramArray = new ParameterSyntax[this.cantArgumentsToDecorated];
             for (int i = 0; i < paramArray.Length; i++)
             {
-                paramArray[i] = SyntaxFactory.Parameter(SyntaxFactory.Identifier("__param" + i)).WithType(this.specificDecoratorTypeParams[i]);
+                paramArray[i] = SyntaxFactory.Parameter(SyntaxFactory.Identifier(this.currentparamsName + i)).WithType(this.specificDecoratorTypeParams[i]);
             }
             return paramArray;
         }
@@ -278,7 +342,7 @@ namespace Decorators.CodeInjections
             var argumentList = SyntaxFactory.ArgumentList();
             for (int i = 0; i < this.cantArgumentsToDecorated; i++)
             {
-                argumentList = argumentList.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("__param" + i)));
+                argumentList = argumentList.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.currentparamsName + i)));
             }
             return argumentList;
         }
@@ -313,29 +377,30 @@ namespace Decorators.CodeInjections
         // se encarga de modificar el cuerpo de los wrappers internos (crear class args si es necesario)
         protected CSharpSyntaxNode WorkingWithWrapperFunction(CSharpSyntaxNode body)
         {
-            if (body is BlockSyntax)
+            BlockSyntax newBody;
+            if (body is BlockSyntax)   
+                newBody = body as BlockSyntax;
+            else   //es necesario por si es un lambda de una sola linea poder añadirle la creacion de paramsgenerics
             {
-                var newBody = body as BlockSyntax;
-
-                if (newBody.DescendantNodes().OfType<IdentifierNameSyntax>().Where(n => n.Identifier.Text == currentArgsName && !n.GetAnnotations("toChangeId").Any()).Any())   //chequea si hace falta instanciar la clase de los parametros
-                    newBody = newBody.WithStatements(newBody.Statements.Insert(0, CreateArgsClassInstruction(newBody.Statements[0].GetLeadingTrivia(), newBody.Statements[0].GetTrailingTrivia())));
-                else
-                {
-                    //en caso de que no hizo falta crea la clase params, entonces elimino su existencia (sustituyo por los parametros reales)
-                    var invocationToChange = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
-                    newBody = newBody.ReplaceNodes(invocationToChange, (n1, n2) => n1.WithArgumentList(MakingInvocationArguments()));
-
-                    var arrayAccessExp = newBody.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
-                    newBody = newBody.ReplaceNodes(arrayAccessExp, (n1, n2) => SyntaxFactory.IdentifierName(paramsName + n1.GetAnnotations("toChange").First().Data));
-                   
-                    var memberAccessExpsIEnumerable = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChangeToTupleMember").Any());
-                    newBody = newBody.ReplaceNodes(memberAccessExpsIEnumerable, (n1, n2) => MakingTupleValues());
-                    //Console.WriteLine(newBody.ToFullString());
-
-                }
-                return newBody;
+                newBody = SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.Token(SyntaxKind.ReturnKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")),body as ExpressionSyntax, SyntaxFactory.Token(SyntaxKind.SemicolonToken))).WithTriviaFrom(body);
             }
-            return body;
+            
+            if (newBody.DescendantNodes().OfType<IdentifierNameSyntax>().Where(n => n.Identifier.Text == currentArgsName && !n.GetAnnotations("toChangeId").Any()).Any())   //chequea si hace falta instanciar la clase de los parametros
+                newBody = newBody.WithStatements(newBody.Statements.Insert(0, CreateArgsClassInstruction(newBody.Statements[0].GetLeadingTrivia(), newBody.Statements[0].GetTrailingTrivia())));
+            else
+            {
+                //en caso de que no hizo falta crea la clase params, entonces elimino su existencia (sustituyo por los parametros reales)
+                var invocationToChange = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
+                newBody = newBody.ReplaceNodes(invocationToChange, (n1, n2) => n1.WithArgumentList(MakingInvocationArguments()));
+
+                var arrayAccessExp = newBody.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(n => n.GetAnnotations("toChange").Any());
+                newBody = newBody.ReplaceNodes(arrayAccessExp, (n1, n2) => SyntaxFactory.IdentifierName(currentparamsName + n1.GetAnnotations("toChange").First().Data));
+               
+                var memberAccessExpsIEnumerable = newBody.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(n => n.GetAnnotations("toChangeToTupleMember").Any());
+                newBody = newBody.ReplaceNodes(memberAccessExpsIEnumerable, (n1, n2) => MakingTupleValues());
+
+            }
+            return newBody;
         }
 
         //construye la instruccion ParamsGenerics2<int, int> a = new ParamsGenerics2<int, int>(__param0, _param1);
@@ -349,7 +414,7 @@ namespace Decorators.CodeInjections
 
             for (int i = 0; i < this.cantArgumentsToDecorated; i++)
             {
-                initializerExp = initializerExp.AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(paramsName + i)));
+                initializerExp = initializerExp.AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(currentparamsName + i)));
             }
 
             // ParamsGenerics2<int, int> a = new ParamsGenerics2<int, int>(__param0, _param1);
@@ -391,11 +456,11 @@ namespace Decorators.CodeInjections
             if (cantArgumentsToDecorated == 0) //si no tiene parametros pongo null
                 return SyntaxFactory.LiteralExpression(SyntaxKind.NullKeyword);
             if (cantArgumentsToDecorated == 1) //1 parametro el tipo directo
-                return SyntaxFactory.IdentifierName(this.paramsName + "0");
+                return SyntaxFactory.IdentifierName(this.currentparamsName + "0");
 
             var newNode = SyntaxFactory.TupleExpression();  //mas de 1, tuplas
             for (int i = 0; i < cantArgumentsToDecorated; i++)
-                newNode = newNode.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.paramsName + i.ToString())));
+                newNode = newNode.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.currentparamsName + i.ToString())));
 
             return newNode;
         }

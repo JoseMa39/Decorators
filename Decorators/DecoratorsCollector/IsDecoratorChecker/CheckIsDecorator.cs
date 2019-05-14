@@ -92,7 +92,7 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
             }
             return decorators;
         }
-
         #endregion
     }
 }
+

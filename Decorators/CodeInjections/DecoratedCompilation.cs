@@ -26,10 +26,12 @@ namespace Decorators.CodeInjections
         IErrorLog log;
 
         string namespaceClassesGenerated;
+        string paramClassGenerated ;
 
         public DecoratedCompilation()
         {
             this.namespaceClassesGenerated = "DecoratorsClassesGenerated";
+            this.paramClassGenerated = "ParamsGenerics";
         }
 
         #region Decorating Functions
@@ -80,7 +82,7 @@ namespace Decorators.CodeInjections
         {
             var semanticModel = compilation.GetSemanticModel(currentRoot.SyntaxTree);
 
-            foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => n.DescendantNodes().OfType<AttributeSyntax>().Any(attr => this.checker.IsDecorateAttr(attr,semanticModel))))
+            foreach (var node in currentRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(n => n.Body!=null && n.DescendantNodes().OfType<AttributeSyntax>().Any(attr => this.checker.IsDecorateAttr(attr,semanticModel))))
             {
                 currentRoot = DecoratingMethods(node, currentRoot, semanticModel);
             }
@@ -197,6 +199,16 @@ namespace Decorators.CodeInjections
         private MemberDeclarationSyntax CreateStaticFieldDelegate(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs, IMethodSymbol methodSymbol, SemanticModel model)
         {
             var funcDelegate = CreateStaticDelegateDecorated(node, decoratorsAttrs, methodSymbol, model);
+
+            //aqui tambien es necesario por si pasan lambda en los parametros del decorador que utilizan DynamicResult y DynamicCollection
+            int cantArgs = (methodSymbol.IsStatic)?node.ParameterList.Parameters.Count: node.ParameterList.Parameters.Count+1;   //si es estatico tiene un parametro mas
+            if (funcDelegate.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgs.ToString())).Any())
+            {
+                funcDelegate = funcDelegate.WithAdditionalAnnotations(new SyntaxAnnotation("using"));
+                if (!this.classesToGen.Contains(cantArgs))  //guardando las clases que necesito generar
+                    classesToGen.Add(cantArgs);
+            }
+
 
             if (SyntaxTools.HasGenericTypes(node))   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
             {

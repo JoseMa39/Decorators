@@ -49,7 +49,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             else type = SyntaxFactory.IdentifierName(nameDecorator);
 
 
-            var objectCreation = SyntaxFactory.ObjectCreationExpression(type.WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), GetParameters(methodToDecorated,attr), null);
+            var objectCreation = SyntaxFactory.ObjectCreationExpression(type.WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), GetParameters(methodToDecorated, toDecoratedSymbol,attr), null);
             var parenthesizeddObjectCreation = SyntaxFactory.ParenthesizedExpression(objectCreation);
             var accessExpr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, parenthesizeddObjectCreation, SyntaxFactory.IdentifierName("Decorator"));
             return SyntaxFactory.InvocationExpression(accessExpr, SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));
@@ -72,9 +72,8 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             return SyntaxTools.FormatterStringNames(_decorator.Identifier.Text, nameMethodToDecorated);
         }
 
-        private ArgumentListSyntax GetParameters(MethodDeclarationSyntax methodToDecorated, AttributeSyntax attr)
+        private ArgumentListSyntax GetParameters(MethodDeclarationSyntax methodToDecorated, IMethodSymbol toDecoratedSymbol,AttributeSyntax attr)
         {
-            
             if (attr.ChildNodes().OfType<AttributeArgumentListSyntax>().Any())  //si tiene los argumentos en el attribute
             {
                 var argList = SyntaxFactory.ArgumentList();
@@ -85,11 +84,11 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
                 }
                 return argList;
             }
-            return GetParametersFromMethodDeclaration(methodToDecorated, attr);
+            return GetParametersFromMethodDeclaration(methodToDecorated, toDecoratedSymbol, attr);
         }
 
         //Busca los parametros en el cuerpo de la funcion a decorar de algo como Log a = new Log("bla")
-        private ArgumentListSyntax GetParametersFromMethodDeclaration(MethodDeclarationSyntax methodToDecorated, AttributeSyntax attr)
+        private ArgumentListSyntax GetParametersFromMethodDeclaration(MethodDeclarationSyntax methodToDecorated, IMethodSymbol toDecoratedSymbol, AttributeSyntax attr)
         {
             var typeAttr = semanticModel.GetTypeInfo(attr).Type as INamedTypeSymbol;
             int index = -1;
@@ -106,19 +105,34 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
                             try
                             {
                                 var objectCreationAttr = methodToDecorated.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().Where(n => semanticModel.GetTypeInfo(n).Type.OriginalDefinition.ToDisplayString() == typeAttr.OriginalDefinition.ToDisplayString());
-                                return objectCreationAttr.Skip(index).First().ArgumentList;
+                                return TransformArgumentList(methodToDecorated, toDecoratedSymbol, objectCreationAttr.Skip(index).First().ArgumentList);
                             }
                             catch
                             {
                                 return SyntaxFactory.ArgumentList();  //en caso de no encontrar ninguno
                             }
-
                         }
                     }
                 }
             }
             return SyntaxFactory.ArgumentList();
         }
+
+
+        //analiza los parametros igual que el decorador pues estos forman parte del decorador, si un decorador recibe un lambda de paramsCollection a bool,
+        //al pasarle el parametro tambien se le pasara un paramscollection y hay que transformarlo
+        private ArgumentListSyntax TransformArgumentList(MethodDeclarationSyntax methodToDecorated, IMethodSymbol toDecoratedSymbol, ArgumentListSyntax argumentList)
+        {
+            var newArgList = SyntaxFactory.SeparatedList<ArgumentSyntax>();
+            foreach (var item in argumentList.Arguments) 
+            {
+                SpecificDecoratorRewriter paramAnalizer = new SpecificDecoratorRewriter(semanticModel,toDecoratedSymbol, methodToDecorated);
+                newArgList = newArgList.Add(item.WithExpression(paramAnalizer.Visit(item.Expression) as ExpressionSyntax));
+            }
+            return argumentList.WithArguments(newArgList);
+        }
+
+
 
 
         #endregion
