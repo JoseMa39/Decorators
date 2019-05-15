@@ -189,9 +189,19 @@ namespace Decorators.CodeInjections
             node = node.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>());
 
             var invocacion = MakingInvocationExpresionForToDecorated(node, methodSymbol);
-            var temp1 = SyntaxFactory.ReturnStatement(invocacion);
-            temp1 = temp1.WithReturnKeyword(temp1.ReturnKeyword.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node.Body.Statements[0]);
-            SyntaxList<StatementSyntax> stmt = new SyntaxList<StatementSyntax>(temp1);
+
+            StatementSyntax firststatement;
+            if (methodSymbol.ReturnsVoid)
+            {
+                firststatement = SyntaxFactory.ExpressionStatement(invocacion);
+            }
+            else
+            {
+                var temp1 = SyntaxFactory.ReturnStatement(invocacion);
+                firststatement = temp1.WithReturnKeyword(temp1.ReturnKeyword.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
+            }
+            firststatement = firststatement.WithLeadingTrivia(node.Body.GetLeadingTrivia().AddRange(SyntaxFactory.ParseLeadingTrivia("    "))).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia("\n"));
+            SyntaxList<StatementSyntax> stmt = new SyntaxList<StatementSyntax>(firststatement);
             return node.WithBody(node.Body.WithStatements(stmt));
         }
 
@@ -233,7 +243,9 @@ namespace Decorators.CodeInjections
             {
                 argumentList = argumentList.AddArguments(item.Type);
             }
-            argumentList = argumentList.AddArguments(node.ReturnType);
+
+            //si es void añade bool porque el metodo privado generado sera bool
+            argumentList = argumentList.AddArguments((methodSymbol.ReturnsVoid) ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType) : node.ReturnType);
 
             //func<int,int,int>
             var fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);

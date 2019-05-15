@@ -19,6 +19,7 @@ using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using DecoratorsDLL.DecoratorsClasses;
 using Decorators.Utilities.ErrorLogger;
 using Decorators.DecoratorsCollector.IsDecoratorChecker;
+using System.Diagnostics;
 
 namespace Decorators
 {
@@ -26,7 +27,12 @@ namespace Decorators
     {
         static void Main(string[] args)
         {
+            Stopwatch a = new Stopwatch();
+            a.Start();
             GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator\ProbadorFuncDecorator.csproj").Wait();
+            a.Stop();
+            Console.WriteLine( a.ElapsedMilliseconds);
+            
             //CompileSolution(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln", "..\\..\\outFolder");
             //GenerateCode();
            // GenerateCode(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln").Wait();

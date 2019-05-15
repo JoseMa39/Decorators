@@ -38,17 +38,37 @@ namespace Decorators.CodeInjections
         {
             SyntaxToken name = SyntaxFactory.Identifier(SyntaxTools.GetFuncPrivateName(node.Identifier.Text));
             var attrList = GetNoDecoratorAttrs();
-
-            if (toDecoratedMethodSymbol.IsStatic && node == toDecoratedMethod)  //si es estatico solo hay que cambiarle el nombre
-            {
-                return node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(AddingPrivateModifier());
-            }
+          
             node = base.VisitMethodDeclaration(node) as MethodDeclarationSyntax;
 
-            return node.WithParameterList(MakeNewParametersList()).WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(AddingPrivateModifier()).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
+            if (node.Identifier.Text == toDecoratedMethod.Identifier.Text)   //si es el methodprivate a generar (puede que no lo sea pues se pueden declarar funciones anidadas)
+            {
+                if (toDecoratedMethodSymbol.ReturnsVoid)
+                {
+                    node = node.WithReturnType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType));
+                    node = node.WithBody(node.Body.AddStatements(SyntaxFactory.ReturnStatement(SyntaxFactory.Token(node.Body.GetLeadingTrivia().AddRange(SyntaxFactory.ParseLeadingTrivia("    ")), SyntaxKind.ReturnKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression), SyntaxFactory.Token(SyntaxKind.SemicolonToken)).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia("\n"))));
+                }
+
+
+                node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(AddingPrivateModifier());
+
+                return (toDecoratedMethodSymbol.IsStatic) ? node : node.WithParameterList(MakeNewParametersList()).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
+            }
+            return node;
 
         }
 
+        public override SyntaxNode VisitReturnStatement(ReturnStatementSyntax node)
+        {
+            node =  base.VisitReturnStatement(node) as ReturnStatementSyntax;
+            
+            if(node.Expression == null && toDecoratedMethodSymbol.ReturnsVoid && !node.Ancestors().OfType<LambdaExpressionSyntax>().Any() && node.Ancestors().OfType<MethodDeclarationSyntax>().First().Identifier.Text == toDecoratedMethod.Identifier.Text)
+            {
+                return SyntaxFactory.ReturnStatement(SyntaxFactory.Token(SyntaxKind.ReturnKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression), SyntaxFactory.Token(SyntaxKind.SemicolonToken)).WithTriviaFrom(node);
+            }
+            return node;
+
+        }
 
         //cambia this por instanceName
         public override SyntaxNode VisitThisExpression(ThisExpressionSyntax node)
@@ -64,7 +84,7 @@ namespace Decorators.CodeInjections
 
             var identifierSymbol = modeloSemanticoToDecoratedMethod.GetSymbolInfo(node).Symbol;
 
-            if (!(node.Parent is MemberAccessExpressionSyntax))   //si no forma parte de una expresion de la forma a.method(), entonces tengo que poner la instancia del objeto
+            if (!(node.Parent is MemberAccessExpressionSyntax) && !toDecoratedMethodSymbol.IsStatic && identifierSymbol!=null)   //si no forma parte de una expresion de la forma a.method(), entonces tengo que poner la instancia del objeto
             {
                 if(identifierSymbol.Kind == SymbolKind.Field || identifierSymbol.Kind == SymbolKind.Property || (identifierSymbol.Kind == SymbolKind.Method && identifierSymbol.ContainingType == toDecoratedMethodSymbol.ReceiverType && !identifierSymbol.IsStatic))
                 {

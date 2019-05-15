@@ -34,7 +34,7 @@ namespace Decorators.CodeInjections
                 return node;
             }
 
-            var separatedList = SyntaxFactory.SeparatedList<BaseTypeSyntax>();
+            //var separatedList = SyntaxFactory.SeparatedList<BaseTypeSyntax>();
             //node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated).WithTriviaFrom(node.Identifier).WithTrailingTrivia(node.BaseList.GetTrailingTrivia())).WithBaseList(null);   //para quitar que herede del decoratorAttribute
             node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated)).WithBaseList(null);   //para quitar que herede del decoratorAttribute
 

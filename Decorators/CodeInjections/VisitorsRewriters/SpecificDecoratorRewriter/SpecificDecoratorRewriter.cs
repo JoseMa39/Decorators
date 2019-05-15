@@ -180,7 +180,7 @@ namespace Decorators.CodeInjections
 
             if (completeType == dynamicResult && node.Identifier.Text == dynamicResult.Split('.').Last() )
             {
-                return toDecorated.ReturnType.WithTriviaFrom(node);
+                return (!toDecoratedMethodSymbol.ReturnsVoid) ?toDecorated.ReturnType.WithTriviaFrom(node):SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node);
             }
             if (completeType == dynamicParam && node.Identifier.Text == dynamicParam.Split('.').Last())
             {
@@ -215,7 +215,8 @@ namespace Decorators.CodeInjections
             }
             if (completeType == dynamicResult)
             {
-                return toDecorated.ReturnType.WithTriviaFrom(node);
+                return (!toDecoratedMethodSymbol.ReturnsVoid) ? toDecorated.ReturnType.WithTriviaFrom(node) : SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node);
+
             }
             if (completeType == dynamicParam)
             {
@@ -371,7 +372,7 @@ namespace Decorators.CodeInjections
             {
                 argumentList = argumentList.AddArguments(item);
             }
-            return argumentList.AddArguments(toDecorated.ReturnType);
+            return (!toDecoratedMethodSymbol.ReturnsVoid) ? argumentList.AddArguments(toDecorated.ReturnType): argumentList.AddArguments(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)));
         }
 
         // se encarga de modificar el cuerpo de los wrappers internos (crear class args si es necesario)
