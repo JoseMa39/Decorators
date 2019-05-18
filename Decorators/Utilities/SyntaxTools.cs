@@ -39,11 +39,55 @@ namespace Decorators.Utilities
             return FormatterStringNames(identifier, "PrivateClass");
         }
 
+        internal static string GetDelegateConstrName(string identifier)
+        {
+            return FormatterStringNames(identifier, "DelegateConstr");
+        }
+
         internal static string FormatterStringNames(string identifier, string modifier)
         {
             return "__" + identifier + modifier;
         }
 
+       //Verifica si la función a decorar tiene parametros con modificadores
+        internal static bool HasParamsModifiers(IMethodSymbol toDecoratedSymbol)
+        {
+            foreach (var item in toDecoratedSymbol.Parameters)
+            {
+                if (item.RefKind != RefKind.None)
+                    return true;
+            }
+            return false;
+        }
+
+        //Pone el modificador private
+        
+
+        internal static SyntaxTokenList AddingPrivateModifier(SyntaxTokenList modifiers)
+        {
+            var visibilityMod = modifiers.Where(m => IsAccesibilityModifiers(m));
+            if (visibilityMod.Count()!= 0)
+            {
+                var modf = visibilityMod.First();
+                return modifiers.Replace(modf, SyntaxFactory.Token(SyntaxKind.PrivateKeyword).WithTriviaFrom(modf));
+            }
+            return modifiers;
+        }
+
+        //dice si es un modificador de visibilidad distinto de private
+        internal static bool IsAccesibilityModifiers(SyntaxToken m)
+        {
+            return m.Kind() == SyntaxKind.PublicKeyword || m.Kind() == SyntaxKind.ProtectedKeyword || m.Kind() == SyntaxKind.InternalKeyword || m.Kind() == SyntaxKind.PrivateKeyword;
+        }
+
+        //construye MyDelegate<>
+        internal static SimpleNameSyntax MakingDelegateName(MethodDeclarationSyntax toDecorated,IMethodSymbol toDecoratedMethodSymbol)
+        {
+            string name = SyntaxTools.GetDelegateConstrName(toDecorated.Identifier.Text);
+            if (toDecoratedMethodSymbol.IsGenericMethod)
+                return SyntaxFactory.GenericName(SyntaxFactory.Identifier(name), SyntaxTools.MakeArgsFromParams(toDecorated.TypeParameterList)).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "));
+            return SyntaxFactory.IdentifierName(name).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "));
+        }
         #endregion
 
 

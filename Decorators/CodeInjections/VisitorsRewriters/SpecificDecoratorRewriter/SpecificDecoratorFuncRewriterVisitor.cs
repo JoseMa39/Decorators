@@ -1,4 +1,5 @@
 ﻿using Decorators.CodeInjections.ClassesToCreate;
+using Decorators.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -52,10 +53,16 @@ namespace Decorators.CodeInjections
                 return node;
             }
 
-            
+
 
             //func<int,int,int>  y cambiando el nombre a __DecoratorToDecorate
-            var fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), MakingFuncDelegateTypeArguments());
+            SimpleNameSyntax fun;
+            if (hasModifierParams)
+                fun = SyntaxTools.MakingDelegateName(toDecorated, toDecoratedMethodSymbol);
+            else
+                fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), MakingFuncDelegateTypeArguments());
+
+
             node = node.WithIdentifier(SyntaxFactory.Identifier("__" + decoratorMethod.Identifier.Text + toDecorated.Identifier.Text)).WithReturnType(fun);
 
             //generando el parametro para el decorador
@@ -67,7 +74,7 @@ namespace Decorators.CodeInjections
             if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
                 node = node.WithAdditionalAnnotations(new SyntaxAnnotation("using", cantArgumentsToDecorated.ToString()));
 
-            return node.WithConstraintClauses(toDecorated.ConstraintClauses).WithTypeParameterList(toDecorated.TypeParameterList);
+            return node.WithConstraintClauses(toDecorated.ConstraintClauses).WithTypeParameterList(toDecorated.TypeParameterList).WithModifiers(SyntaxTools.AddingPrivateModifier(node.Modifiers));
         }
         
     }

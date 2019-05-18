@@ -1,4 +1,5 @@
 ﻿using Decorators.CodeInjections.ClassesToCreate;
+using Decorators.Utilities;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -18,6 +19,8 @@ namespace Decorators.CodeInjections
         protected MethodDeclarationSyntax toDecorated;
         protected string currentArgsName,paramsName, currentparamsName, dynamicParam, dynamicResult, dynamicResultValue, paramClassGenerated, toTupleParamsType, toTupleMethodName;
         protected int cantArgumentsToDecorated, deep;
+
+        protected bool hasModifierParams;
 
         protected IMethodSymbol toDecoratedMethodSymbol;
 
@@ -40,6 +43,8 @@ namespace Decorators.CodeInjections
 
             this.toTupleMethodName = "ToTuple()";
             this.dynamicResultValue = "Value";
+
+            this.hasModifierParams = SyntaxTools.HasParamsModifiers(toDecoratedMethodSymbol);
 
             //para trabajar cuando no es estatico
             this.toDecoratedMethodSymbol = toDecoratedMethodSymbol;
@@ -199,6 +204,8 @@ namespace Decorators.CodeInjections
             node = base.VisitGenericName(node) as GenericNameSyntax;
             if (iswrapper)  //reconociendo se se trata de un wrapper a la funcion decorada
             {
+                if (hasModifierParams)
+                    return SyntaxTools.MakingDelegateName(toDecorated,toDecoratedMethodSymbol).WithTriviaFrom(node);
                 node = node.WithTypeArgumentList(MakingFuncDelegateTypeArguments());
             }
             return node;
@@ -326,12 +333,25 @@ namespace Decorators.CodeInjections
         #endregion
 
         #region Utiles
+
+        //MyDelegate<...> para los atributos
+        
         protected ParameterSyntax[] MakingParameters()
         {
             ParameterSyntax[] paramArray = new ParameterSyntax[this.cantArgumentsToDecorated];
             for (int i = 0; i < paramArray.Length; i++)
             {
-                paramArray[i] = SyntaxFactory.Parameter(SyntaxFactory.Identifier(this.currentparamsName + i)).WithType(this.specificDecoratorTypeParams[i]);
+                var param = SyntaxFactory.Parameter(SyntaxFactory.Identifier(this.currentparamsName + i)).WithType(this.specificDecoratorTypeParams[i]);
+                if (toDecoratedMethodSymbol.IsStatic || i > 0)   // si no es estatico entonces los parametros estan corridos
+                {
+                    var mod = toDecorated.ParameterList.Parameters[i - ((toDecoratedMethodSymbol.IsStatic) ? 0 : 1)].Modifiers;    //anadiendo out o ref si están
+
+                    if (mod.Count != 0)
+                        param = param.AddModifiers(mod.First());
+                }
+
+
+                paramArray[i] = param;
             }
             return paramArray;
         }
@@ -343,7 +363,18 @@ namespace Decorators.CodeInjections
             var argumentList = SyntaxFactory.ArgumentList();
             for (int i = 0; i < this.cantArgumentsToDecorated; i++)
             {
-                argumentList = argumentList.AddArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.currentparamsName + i)));
+                var arg = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(this.currentparamsName + i));  //anadiendo out o ref si están
+
+
+                if (toDecoratedMethodSymbol.IsStatic || i > 0)
+                {
+                    var mod = toDecorated.ParameterList.Parameters[i - ((toDecoratedMethodSymbol.IsStatic) ? 0 : 1)].Modifiers;    //anadiendo out o ref si están
+
+                    if (mod.Count != 0)
+                        arg = arg.WithRefKindKeyword(mod.First());
+                }
+
+                argumentList = argumentList.AddArguments(arg);
             }
             return argumentList;
         }
@@ -358,7 +389,20 @@ namespace Decorators.CodeInjections
                 var memberAccess = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, arrayArgs.Expression, SyntaxFactory.IdentifierName($"Item{1 + i}"));
 
                 //casteando al tipo especifico del parametro
-                argumentList = argumentList.AddArguments(SyntaxFactory.Argument(memberAccess));
+
+                var arg = SyntaxFactory.Argument(memberAccess);
+
+                if (toDecoratedMethodSymbol.IsStatic || i>0)
+                {
+                    var mod = toDecorated.ParameterList.Parameters[i - ((toDecoratedMethodSymbol.IsStatic) ? 0 : 1)].Modifiers;    //anadiendo out o ref si están
+
+                    if (mod.Count != 0)
+                        arg = arg.WithRefKindKeyword(mod.First());
+                }
+
+                argumentList = argumentList.AddArguments(arg);
+
+
             }
             return argumentList;
         }

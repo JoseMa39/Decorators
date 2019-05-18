@@ -50,7 +50,7 @@ namespace Decorators.CodeInjections
                 }
 
 
-                node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(AddingPrivateModifier());
+                node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(SyntaxTools.AddingPrivateModifier(toDecoratedMethod.Modifiers));
 
                 return (toDecoratedMethodSymbol.IsStatic) ? node : node.WithParameterList(MakeNewParametersList()).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
             }
@@ -117,13 +117,7 @@ namespace Decorators.CodeInjections
         }
 
 
-        //Pone el modificador private
-        private SyntaxTokenList AddingPrivateModifier()
-        {
-            if (toDecoratedMethodSymbol.DeclaredAccessibility != Accessibility.Private)   //se encarga de ponerle private al metodo
-                return SyntaxFactory.TokenList(toDecoratedMethod.Modifiers.Replace(toDecoratedMethod.Modifiers.First(m => IsAccesibilityModifiers(m)), SyntaxFactory.Token(SyntaxKind.PrivateKeyword).WithTriviaFrom(toDecoratedMethod.Modifiers.First(m => IsAccesibilityModifiers(m)))));
-            return toDecoratedMethod.Modifiers;
-        }
+       
         //agregando parametro classContainer instance
         private ParameterListSyntax MakeNewParametersList()
         {
@@ -132,11 +126,7 @@ namespace Decorators.CodeInjections
             return SyntaxFactory.ParameterList(separatedList).WithTriviaFrom(toDecoratedMethod.ParameterList);
         }
 
-        //dice si es un modificador de visibilidad distinto de private
-        private bool IsAccesibilityModifiers(SyntaxToken m)
-        {
-            return m.Kind() == SyntaxKind.PublicKeyword || m.Kind() == SyntaxKind.ProtectedKeyword || m.Kind() == SyntaxKind.InternalKeyword;
-        }
+       
 
         #endregion
     }

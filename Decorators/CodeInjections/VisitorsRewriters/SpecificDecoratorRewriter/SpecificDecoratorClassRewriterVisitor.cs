@@ -1,5 +1,6 @@
 ﻿using Decorators.CodeInjections.ClassesToCreate;
 using Decorators.DecoratorsCollector.IsDecoratorChecker;
+using Decorators.Utilities;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -42,7 +43,7 @@ namespace Decorators.CodeInjections
             if (node.DescendantTokens().OfType<SyntaxToken>().Where(n => n.Kind() == SyntaxKind.IdentifierToken && n.Text == (paramClassGenerated + cantArgumentsToDecorated.ToString())).Any())
                 node = node.WithAdditionalAnnotations(new SyntaxAnnotation("using", cantArgumentsToDecorated.ToString()));
 
-            return node.WithConstraintClauses(toDecorated.ConstraintClauses).WithTypeParameterList(toDecorated.TypeParameterList).WithTriviaFrom(toDecorated);
+            return node.WithConstraintClauses(toDecorated.ConstraintClauses).WithTypeParameterList(toDecorated.TypeParameterList).WithModifiers(SyntaxTools.AddingPrivateModifier(node.Modifiers)).WithTriviaFrom(toDecorated);
         }
 
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
@@ -83,8 +84,14 @@ namespace Decorators.CodeInjections
                 return node;
             }
 
+            SimpleNameSyntax fun;
+            if (hasModifierParams)
+                fun = SyntaxTools.MakingDelegateName(toDecorated,toDecoratedMethodSymbol);
+            else
+                fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), MakingFuncDelegateTypeArguments());
+
+
             //func<int,int,int>  y cambiando el nombre a __DecoratorToDecorate
-            var fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), MakingFuncDelegateTypeArguments());
             node = node.WithReturnType(fun);
 
             //generando el parametro para el decorador
@@ -92,7 +99,7 @@ namespace Decorators.CodeInjections
 
             node = node.WithParameterList(SyntaxFactory.ParameterList().AddParameters(param).WithTriviaFrom(node.ParameterList));
             node = node.WithModifiers(SyntaxFactory.TokenList(node.Modifiers.Where(m => m.Kind() != SyntaxKind.OverrideKeyword)));   //quitando override
-            return node;
+            return node; ;
         }
 
         private MethodDeclarationSyntax GetDecoratorMethod()

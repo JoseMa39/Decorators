@@ -24,7 +24,7 @@ namespace Decorators.CodeInjections
         List<int> classesToGen;
         IDecoratorChecker checker;
         IErrorLog log;
-
+        
         string namespaceClassesGenerated;
         string paramClassGenerated ;
 
@@ -103,6 +103,8 @@ namespace Decorators.CodeInjections
             var methodSymbol = semanticModel.GetDeclaredSymbol(node);   //obteniendo la informacion semantica del metodo a decorar
             bool thereAreErrors = false;  //guarda si hay errores en este syntaxtree (si se hace referencia a algun decorador que no existe, el resto serian errores de compilacion)
 
+            bool hasParamsModifiers = SyntaxTools.HasParamsModifiers(methodSymbol);
+
             #region Generating specific decorators
             var decoEnumerable = node.DescendantNodes().OfType<AttributeSyntax>().Where((item) => this.checker.IsDecorateAttr(item,semanticModel));
             foreach (var decoratorAttr in decoEnumerable)   //puede estar decorada con mas de un decorador
@@ -158,7 +160,11 @@ namespace Decorators.CodeInjections
             modifiedClass = modifiedClass.AddMembers(field);
 
             #endregion
+            #region Creating delegate if its necessary
+            if (hasParamsModifiers)
+                modifiedClass = modifiedClass.AddMembers(CreateDelegateConstr(node,methodSymbol));
 
+            #endregion
             #region Doing code substitution inside to decorated original function body
 
             //Sustituyendo el codigo de la funcion a decorar (return staticDelegateDecorated(param1, ... , paramN))
@@ -233,22 +239,8 @@ namespace Decorators.CodeInjections
         //crea un delegado estatico que guarda la funcion decorada
         private FieldDeclarationSyntax CreateStaticDelegateDecorated(MethodDeclarationSyntax node, IEnumerable<AttributeSyntax> decoratorsAttrs, IMethodSymbol methodSymbol, SemanticModel model)
         {
-            //creando lista con los argumentos de la funcion para crear el delegado
-            var argumentList = SyntaxFactory.TypeArgumentList();
-
-            if (!methodSymbol.IsStatic)
-                argumentList = argumentList.AddArguments(SyntaxFactory.IdentifierName(methodSymbol.ReceiverType.Name));
-
-            foreach (var item in node.ParameterList.Parameters)
-            {
-                argumentList = argumentList.AddArguments(item.Type);
-            }
-
-            //si es void añade bool porque el metodo privado generado sera bool
-            argumentList = argumentList.AddArguments((methodSymbol.ReturnsVoid) ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType) : node.ReturnType);
-
-            //func<int,int,int>
-            var fun = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);
+            //tiene en cuenta si hay parametros ref u out
+            TypeSyntax fun = (SyntaxTools.HasParamsModifiers(methodSymbol))? SyntaxTools.MakingDelegateName(node,methodSymbol) : CreateFuncGeneric(node, methodSymbol);
 
             ExpressionSyntax inv = null;
             foreach (var item in decoratorsAttrs.Reverse())
@@ -273,11 +265,19 @@ namespace Decorators.CodeInjections
             var varDeclaration = SyntaxFactory.VariableDeclaration(fun).AddVariables(varDeclarator);
 
             //anadiendo public y static
-            return SyntaxFactory.FieldDeclaration(varDeclaration).AddModifiers(SyntaxFactory.Token(node.GetLeadingTrivia(), SyntaxKind.PublicKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.Token(SyntaxFactory.ParseLeadingTrivia(""), SyntaxKind.StaticKeyword, SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node);
+            return SyntaxFactory.FieldDeclaration(varDeclaration).AddModifiers(SyntaxFactory.Token(node.GetLeadingTrivia(), (methodSymbol.IsGenericMethod)? SyntaxKind.PublicKeyword : SyntaxKind.PrivateKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.Token(SyntaxFactory.ParseLeadingTrivia(""), SyntaxKind.StaticKeyword, SyntaxFactory.ParseTrailingTrivia(" "))).WithTriviaFrom(node);
 
         }
 
+      
+       
 
+        //static delegate TResult __methodDelegateConstr(...)
+        private DelegateDeclarationSyntax CreateDelegateConstr(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
+        {
+            var deleg = SyntaxFactory.DelegateDeclaration((methodSymbol.ReturnsVoid) ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType) : node.ReturnType.WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), SyntaxTools.GetDelegateConstrName(node.Identifier.Text));
+            return deleg.WithParameterList(node.ParameterList).WithTypeParameterList(node.TypeParameterList).WithConstraintClauses(node.ConstraintClauses).WithTriviaFrom(node);
+        }
 
 
         #endregion
@@ -338,6 +338,12 @@ namespace Decorators.CodeInjections
             foreach (var item in node.ParameterList.Parameters)
             {
                 var arg = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(item.Identifier.Text));
+
+
+                var mod = item.Modifiers;   //para anadir ref o out en caso de que se necesite
+                if (mod.Count != 0)
+                    arg = arg.WithRefKindKeyword(mod.First());
+
                 argumentos = argumentos.AddArguments(arg);
             }
 
@@ -395,8 +401,27 @@ namespace Decorators.CodeInjections
             return classNode.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.ToFullString() + "." + originalDefinition;
         }
 
+        //Func<int,int,int>
+        private GenericNameSyntax CreateFuncGeneric(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
+        {
+            var argumentList = SyntaxFactory.TypeArgumentList();
+
+            if (!methodSymbol.IsStatic)
+                argumentList = argumentList.AddArguments(SyntaxFactory.IdentifierName(methodSymbol.ReceiverType.Name));
+
+            foreach (var item in node.ParameterList.Parameters)
+            {
+                argumentList = argumentList.AddArguments(item.Type);
+            }
+
+            //si es void añade bool porque el metodo privado generado sera bool
+            argumentList = argumentList.AddArguments((methodSymbol.ReturnsVoid) ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType) : node.ReturnType);
+
+            //func<int,int,int>
+            return SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);
+        }
         #endregion
 
-        
+
     }
 }
