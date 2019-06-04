@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Decorators.Utilities.ErrorLogger
 {
-    class ErrorLog : IErrorLog
+    public class ErrorLog : IErrorLog
     {
         List<IDiagnostic> diagnostics;
         public ErrorLog()

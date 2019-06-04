@@ -13,10 +13,11 @@ using Decorators.Utilities.ErrorLogger;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using PluginCake;
 
 namespace Decorators.CodeInjections
 {
-    class DecoratedCompilation:IProjectDecorator
+    public class DecoratedCompilation:IProjectDecorator,IPlugin
     {
         //Project project;
         Compilation compilation;
@@ -26,18 +27,48 @@ namespace Decorators.CodeInjections
         IErrorLog log;
         
         string namespaceClassesGenerated;
-        string paramClassGenerated ;
+        string paramClassGenerated;
 
-        public DecoratedCompilation()
+
+        List<string> predependecias;
+        List<string> postdependencies;
+
+
+        
+
+        public DecoratedCompilation(IErrorLog log = null)
         {
+            this.predependecias = new List<string>();
+            this.postdependencies = new List<string>();
             this.namespaceClassesGenerated = "DecoratorsClassesGenerated";
             this.paramClassGenerated = "ParamsGenerics";
+            this.log = (log==null)?new ErrorLog():log;
+        }
+
+        #region
+        public Project Execute(Project sol)
+        {
+            return DecoratingProjectAsync(sol, new CheckIsDecorator(), "outFolder").Result;
+        }
+
+        public List<string> Predependencies { get => predependecias; set => predependecias = value; }
+        public List<string> Postdependencies { get => postdependencies; set => postdependencies = value; }
+        public string Name { get => "FancyDeco"; }
+        public string Version { get => "1.00"; }
+
+        string IPlugin.Name { get => "FancyDeco"; set => throw new NotImplementedException(); }
+        string IPlugin.Version { get => "1.00"; set => throw new NotImplementedException(); }
+        #endregion
+
+        public Project DecoratingProject(Project project)
+        {
+            return DecoratingProjectAsync(project, new CheckIsDecorator(), "outFolder").Result;
         }
 
         #region Decorating Functions
-        public async Task<Project> DecoratingProjectAsync(Project project, IDecoratorChecker decoratorRecognize, string outputRealPathModifiedFiles, IErrorLog log)
+        internal async Task<Project> DecoratingProjectAsync(Project project, IDecoratorChecker decoratorRecognize, string outputRealPathModifiedFiles)
         {
-            this.log = log;
+            
             this.checker = decoratorRecognize;
             classesToGen = new List<int>();
             this.decorators = await this.checker.GetDecorators(project);
@@ -99,9 +130,10 @@ namespace Decorators.CodeInjections
             var originalclass = GetOriginalClass(node, root);
             var modifiedClass = originalclass;  //los cambios se realizan sobre esta, necesito la clase sin cambios para poder reemplazarla ()
 
-            List<string> decoratorsNames = new List<string>();   //para no crear el mismo decorador especifico dos veces
+            List<string> decoratorsNames = new List<string>();
+            List<UsingDirectiveSyntax> usingsDirectives = new List<UsingDirectiveSyntax>();   //para no crear el mismo decorador especifico dos veces
+
             var methodSymbol = semanticModel.GetDeclaredSymbol(node);   //obteniendo la informacion semantica del metodo a decorar
-            bool thereAreErrors = false;  //guarda si hay errores en este syntaxtree (si se hace referencia a algun decorador que no existe, el resto serian errores de compilacion)
 
             bool hasParamsModifiers = SyntaxTools.HasParamsModifiers(methodSymbol);
 
@@ -120,13 +152,15 @@ namespace Decorators.CodeInjections
                     var decoratorMethod = LookingForDecorator(nombreDecorador, decoratorAttr);
                     if (decoratorMethod == null)
                     {
-                        thereAreErrors = true;
-                        continue;
+                        this.log.AddError(root.SyntaxTree.FilePath, node.GetLocation().GetLineSpan().StartLinePosition.Line, $"Decorator {nombreDecorador} doesnt exist", Severity.Error);
+                        return root;
                     }
-
 
                     //Creando decorador con los tipos especificos de la funcion decorada
                     MemberDeclarationSyntax memberToAdd = decoratorMethod.CreateSpecificDecorator(node, methodSymbol);
+
+                    //usingsDirectives.AddRange(decoratorMethod.GetUsingNamespaces());    //añadiendo los usings necesarios
+                    //usingsDirectives.Add(BuildUsingStatement(decoratorMethod.CurrentNamespaces));  //añadiendo el namespace del decorador
 
                     if (memberToAdd.GetAnnotations("using").Any())
                     {
@@ -142,9 +176,6 @@ namespace Decorators.CodeInjections
                 }    
             }
             #endregion
-
-            if (thereAreErrors)
-                return root;
 
             #region adding private function which contain decorated function code
 
@@ -174,6 +205,7 @@ namespace Decorators.CodeInjections
 
 
             root = root.ReplaceNode(originalclass, modifiedClass);
+            //root = AddUsingsWithoutRepetition(root, usingsDirectives);
             return root;
         }
 
@@ -225,7 +257,6 @@ namespace Decorators.CodeInjections
                     classesToGen.Add(cantArgs);
             }
 
-
             if (SyntaxTools.HasGenericTypes(node))   //para el caso donde hay tipos genericos   (static class ****PrivateClass {delegate})
             {
                 var classDeclaration = SyntaxFactory.ClassDeclaration(SyntaxFactory.Identifier(SyntaxTools.GetStaticClassPrivateName(node.Identifier.Text)).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")));
@@ -269,14 +300,11 @@ namespace Decorators.CodeInjections
 
         }
 
-      
-       
-
         //static delegate TResult __methodDelegateConstr(...)
         private DelegateDeclarationSyntax CreateDelegateConstr(MethodDeclarationSyntax node, IMethodSymbol methodSymbol)
         {
             var deleg = SyntaxFactory.DelegateDeclaration((methodSymbol.ReturnsVoid) ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword)).WithTriviaFrom(node.ReturnType) : node.ReturnType.WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" ")), SyntaxTools.GetDelegateConstrName(node.Identifier.Text));
-            return deleg.WithParameterList(node.ParameterList).WithTypeParameterList(node.TypeParameterList).WithConstraintClauses(node.ConstraintClauses).WithTriviaFrom(node);
+            return deleg.WithDelegateKeyword(SyntaxFactory.Token(SyntaxKind.DelegateKeyword).WithTriviaFrom(deleg.DelegateKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))).WithParameterList(SyntaxTools.MakeNewParametersList(node,methodSymbol,"instance")).WithTypeParameterList(node.TypeParameterList).WithConstraintClauses(node.ConstraintClauses).WithTriviaFrom(node);
         }
 
 
@@ -376,11 +404,26 @@ namespace Decorators.CodeInjections
         /// <returns></returns>
         private SyntaxNode AddUsing(SyntaxNode root)
         {
-            var using1 = SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(this.namespaceClassesGenerated).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\n"));
+            var using1 = BuildUsingStatement(this.namespaceClassesGenerated);
             SyntaxNode[] temp = { using1 };
             root = root.InsertNodesBefore(root.ChildNodes().First(), temp);
             return root;
         }
+
+        //añade los using sin repetir los que ya estan
+        private SyntaxNode AddUsingsWithoutRepetition(SyntaxNode root, List<UsingDirectiveSyntax> references)
+        {
+            //var currentRootUsing = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
+            root = root.InsertNodesBefore(root.ChildNodes().First(), references);
+            return root;
+        }
+
+        //construye using namespaceName;
+        private UsingDirectiveSyntax BuildUsingStatement(string namespaceName)
+        {
+            return SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(namespaceName).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\n"));
+        }
+
         private ClassDeclarationSyntax GetOriginalClass(MethodDeclarationSyntax method, SyntaxNode currentRoot)
         {
             ClassDeclarationSyntax originalclass = method.Ancestors().OfType<ClassDeclarationSyntax>().First();    //esta es la clase original del project
@@ -407,7 +450,7 @@ namespace Decorators.CodeInjections
             var argumentList = SyntaxFactory.TypeArgumentList();
 
             if (!methodSymbol.IsStatic)
-                argumentList = argumentList.AddArguments(SyntaxFactory.IdentifierName(methodSymbol.ReceiverType.Name));
+                argumentList = argumentList.AddArguments(SyntaxTools.GetTargetType(node,methodSymbol));
 
             foreach (var item in node.ParameterList.Parameters)
             {
@@ -420,6 +463,8 @@ namespace Decorators.CodeInjections
             //func<int,int,int>
             return SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);
         }
+
+        
         #endregion
 
 

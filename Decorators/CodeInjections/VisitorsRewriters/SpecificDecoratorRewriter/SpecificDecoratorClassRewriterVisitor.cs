@@ -35,8 +35,6 @@ namespace Decorators.CodeInjections
                 return node;
             }
 
-            //var separatedList = SyntaxFactory.SeparatedList<BaseTypeSyntax>();
-            //node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated).WithTriviaFrom(node.Identifier).WithTrailingTrivia(node.BaseList.GetTrailingTrivia())).WithBaseList(null);   //para quitar que herede del decoratorAttribute
             node = node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated)).WithBaseList(null);   //para quitar que herede del decoratorAttribute
 
             //si hace falta generar clase, anado una annotation ("using", cantParams) para luego poder anadir la referencia correspondiente y generar la clase

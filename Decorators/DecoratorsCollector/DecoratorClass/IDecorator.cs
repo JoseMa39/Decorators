@@ -14,6 +14,10 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
 
         string Identifier { get;}
 
+        IEnumerable<UsingDirectiveSyntax> GetUsingNamespaces();
+
+        string CurrentNamespaces { get; }
+
         MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol);
 
         ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr);

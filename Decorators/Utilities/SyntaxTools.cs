@@ -98,6 +98,40 @@ namespace Decorators.Utilities
             return SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList<TypeSyntax>(parametersList.Parameters.Select(n => SyntaxFactory.IdentifierName(n.Identifier.Text))));
         }
 
+        //construye el tipo contenedor de la clase en el caso de que la función a decorar sea de instancia
+        internal static TypeSyntax GetTargetType(MethodDeclarationSyntax toDecorated, IMethodSymbol toDecoratedMethodSymbol)
+        {
+            var receiverType = toDecoratedMethodSymbol.ReceiverType as INamedTypeSymbol;
+
+            SyntaxToken type = SyntaxFactory.Identifier(toDecoratedMethodSymbol.ReceiverType.Name);
+            TypeSyntax result = SyntaxFactory.IdentifierName(type);
+
+            if (receiverType != null && receiverType.IsGenericType)  
+            {
+                var containingClass = toDecorated.Ancestors().OfType<ClassDeclarationSyntax>().First();
+                result = SyntaxFactory.GenericName(type, SyntaxTools.MakeArgsFromParams(containingClass.TypeParameterList));
+            }
+
+            return result.WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "));
+        }
+
+
+        //agregando parametro classContainer instance
+        internal static ParameterListSyntax MakeNewParametersList(MethodDeclarationSyntax toDecoratedMethod, IMethodSymbol toDecoratedMethodSymbol, string instanceName)
+        {
+            //var separatedList  = SyntaxFactory.SeparatedList<ParameterSyntax>().Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(this.instanceName)).WithType(SyntaxFactory.IdentifierName(toDecoratedMethodSymbol.ReceiverType.Name).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))));
+            var separatedList = SyntaxFactory.SeparatedList<ParameterSyntax>();
+
+            if(!toDecoratedMethodSymbol.IsStatic)
+                separatedList = separatedList.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(instanceName)).WithType(SyntaxTools.GetTargetType(toDecoratedMethod, toDecoratedMethodSymbol)));
+
+            separatedList = separatedList.AddRange(toDecoratedMethod.ParameterList.Parameters);
+            return SyntaxFactory.ParameterList(separatedList).WithTriviaFrom(toDecoratedMethod.ParameterList);
+        }
+
+
+
+
         internal static bool CheckErrors(Compilation compilation, IErrorLog log) //chequea si el copmilation tiene algun error
         {
             if (compilation.GetDiagnostics().Where(n => n.Severity == DiagnosticSeverity.Error).Any())   //si el project tiene algun error de compilacion

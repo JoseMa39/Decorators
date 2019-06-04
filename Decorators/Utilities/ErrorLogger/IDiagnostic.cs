@@ -9,7 +9,7 @@ namespace Decorators.Utilities.ErrorLogger
 
     public enum Severity { Warning, Error }
 
-    interface IDiagnostic
+    public interface IDiagnostic
     {
         Severity Severity { get; set; }
         string Message { get; set; }

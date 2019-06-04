@@ -52,7 +52,7 @@ namespace Decorators.CodeInjections
 
                 node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(SyntaxTools.AddingPrivateModifier(toDecoratedMethod.Modifiers));
 
-                return (toDecoratedMethodSymbol.IsStatic) ? node : node.WithParameterList(MakeNewParametersList()).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
+                return (toDecoratedMethodSymbol.IsStatic) ? node : node.WithParameterList(SyntaxTools.MakeNewParametersList(toDecoratedMethod,toDecoratedMethodSymbol,instanceName)).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
             }
             return node;
 
@@ -84,8 +84,9 @@ namespace Decorators.CodeInjections
 
             var identifierSymbol = modeloSemanticoToDecoratedMethod.GetSymbolInfo(node).Symbol;
 
-            if (!(node.Parent is MemberAccessExpressionSyntax) && !toDecoratedMethodSymbol.IsStatic && identifierSymbol!=null)   //si no forma parte de una expresion de la forma a.method(), entonces tengo que poner la instancia del objeto
-            {
+            
+            if ((!(node.Parent is MemberAccessExpressionSyntax) || ((MemberAccessExpressionSyntax)node.Parent).Expression==node) && !toDecoratedMethodSymbol.IsStatic && identifierSymbol!=null)   //si no forma parte de una expresion de la forma a.method(), entonces tengo que poner la instancia del objeto
+            {                                                                                                                                                                                       //tambien tengo en cuenta cuando es a.method() pero node == a
                 if(identifierSymbol.Kind == SymbolKind.Field || identifierSymbol.Kind == SymbolKind.Property || (identifierSymbol.Kind == SymbolKind.Method && identifierSymbol.ContainingType == toDecoratedMethodSymbol.ReceiverType && !identifierSymbol.IsStatic))
                 {
                     return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName(this.instanceName), node.WithoutLeadingTrivia()).WithTriviaFrom(node);
@@ -115,18 +116,6 @@ namespace Decorators.CodeInjections
 
             return aux;
         }
-
-
-       
-        //agregando parametro classContainer instance
-        private ParameterListSyntax MakeNewParametersList()
-        {
-            var separatedList  = SyntaxFactory.SeparatedList<ParameterSyntax>().Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(this.instanceName)).WithType(SyntaxFactory.IdentifierName(toDecoratedMethodSymbol.ReceiverType.Name).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "))));
-            separatedList = separatedList.AddRange(this.toDecoratedMethod.ParameterList.Parameters);
-            return SyntaxFactory.ParameterList(separatedList).WithTriviaFrom(toDecoratedMethod.ParameterList);
-        }
-
-       
 
         #endregion
     }

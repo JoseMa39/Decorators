@@ -513,13 +513,16 @@ namespace Decorators.CodeInjections
         protected void FillDecoratorTypeParams()
         {
             if (!toDecoratedMethodSymbol.IsStatic)
-                this.specificDecoratorTypeParams[0] = SyntaxFactory.IdentifierName(toDecoratedMethodSymbol.ReceiverType.Name).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "));
+                this.specificDecoratorTypeParams[0] = SyntaxTools.GetTargetType(toDecorated,toDecoratedMethodSymbol);
+
+            //this.specificDecoratorTypeParams[0] = SyntaxFactory.IdentifierName(toDecoratedMethodSymbol.ReceiverType.Name).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" "));
             for (int i = (toDecoratedMethodSymbol.IsStatic) ? 0 : 1; i < this.specificDecoratorTypeParams.Length; i++)
             {
                 this.specificDecoratorTypeParams[i] = toDecorated.ParameterList.Parameters[i - ((toDecoratedMethodSymbol.IsStatic) ? 0 : 1)].Type;
             }
         }
 
+     
         #endregion
     }
 }

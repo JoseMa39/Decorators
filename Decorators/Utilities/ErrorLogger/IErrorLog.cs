@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Decorators.Utilities.ErrorLogger
 {
-    interface IErrorLog
+    public interface IErrorLog
     {
         void AddError(string filePath, int line, string message, Severity severity);
 

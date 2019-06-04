@@ -23,5 +23,10 @@ namespace Decorators.Utilities.ErrorLogger
 
         public string FilePath { get; set; }
 
+        public override string ToString()
+        {
+            return $"Error:  File: {this.FilePath} ,  Line {this.LinePosition}  -->  {this.Message}";
+        }
+
     }
 }

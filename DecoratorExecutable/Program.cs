@@ -21,7 +21,8 @@ using Decorators.Utilities.ErrorLogger;
 using Decorators.DecoratorsCollector.IsDecoratorChecker;
 using System.Diagnostics;
 
-namespace Decorators
+
+namespace DecoratorExecutable
 {
     class Program
     {
@@ -30,13 +31,16 @@ namespace Decorators
         {
             a = new Stopwatch();
             a.Start();
-            GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator\ProbadorFuncDecorator.csproj").Wait();
+            //GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator\ProbadorFuncDecorator.csproj").Wait();
+
+            GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\AcmeRentalCar(Roslyn)\AcmeRentalCAr\AcmeRentalCAr.csproj").Wait();
+
             a.Stop();
-            Console.WriteLine( a.ElapsedMilliseconds);
-            
+            Console.WriteLine(a.ElapsedMilliseconds);
+
             //CompileSolution(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln", "..\\..\\outFolder");
             //GenerateCode();
-           // GenerateCode(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln").Wait();
+            // GenerateCode(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln").Wait();
         }
 
         #region Funcion que se utiliza para decorar un project
@@ -45,33 +49,22 @@ namespace Decorators
         {
             var workspace = MSBuildWorkspace.Create();
             var project = await workspace.OpenProjectAsync(path);
-
             var errors = new ErrorLog();
 
             var decorator = new DecoratedCompilation(errors);
-            var newProject = await decorator.DecoratingProjectAsync(project,new CheckIsDecorator(),"outFolder");
+            var newProject = decorator.DecoratingProject(project);
 
-            var compilation = await newProject.GetCompilationAsync();
-
-            try
+            foreach (var diag in errors.GetDiagnostics())
             {
-                foreach (var item in errors.GetDiagnostics().Where(diag => diag.Severity == Severity.Error))
-                {
-                    Console.WriteLine($"Error:  File: {item.FilePath} ,  Line {item.LinePosition}  -->  {item.Message}");
-                }
-
-            }
-            catch (InvalidOperationException)
-            {
-                Console.WriteLine("No errors");
+                Console.WriteLine(diag);
+                Console.WriteLine();
             }
 
             Console.WriteLine("Done!!!!");
         }
         #endregion
 
-       
 
-       
+
     }
 }

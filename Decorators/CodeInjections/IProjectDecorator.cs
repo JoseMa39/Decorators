@@ -11,7 +11,6 @@ namespace Decorators.CodeInjections
 {
     internal interface IProjectDecorator
     {
-        Task<Project> DecoratingProjectAsync(Project project, IDecoratorChecker decoratorRecognize, string outputRealPathModifiedFiles, IErrorLog log);
-
+        Project DecoratingProject(Project project);
     }
 }

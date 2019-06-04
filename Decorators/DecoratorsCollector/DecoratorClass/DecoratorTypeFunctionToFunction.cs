@@ -30,6 +30,15 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         public string Identifier { get => this._decorator.Identifier.Text;}
         public TypeDecorator Type { get => type; }
 
+        public string CurrentNamespaces
+        {
+            get
+            {
+                var symbol = semanticModel.GetSymbolInfo(this._decorator.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name).Symbol as INamespaceSymbol;
+                return symbol.Name;
+            }
+        }
+
         public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr)
         {
             var node = toDecorated as MethodDeclarationSyntax;
@@ -52,6 +61,10 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             return newDecorator as MethodDeclarationSyntax;
         }
 
+        public IEnumerable<UsingDirectiveSyntax> GetUsingNamespaces()
+        {
+            return this._decorator.SyntaxTree.GetRoot().DescendantNodes().OfType<UsingDirectiveSyntax>();
+        }
         #endregion
 
         #region tools
