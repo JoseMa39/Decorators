@@ -37,8 +37,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         public string CurrentNamespaces {
             get
             {
-                var symbol = semanticModel.GetDeclaredSymbol(this._decorator.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name) as INamespaceSymbol;
-                return symbol.Name;
+                return this._decorator.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.WithoutTrivia().ToFullString();
             }
         }
 

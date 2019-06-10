@@ -5,20 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using Decorators.CodeInjections;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.MSBuild;
-using System.Runtime;
-using Microsoft.CodeAnalysis.Formatting;
-using Decorators.CodeInjections.ClassesToCreate;
-using Decorators.DecoratorsCollector;
-using DecoratorsDLL;
-using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
-using DecoratorsDLL.DecoratorsClasses;
 using Decorators.Utilities.ErrorLogger;
-using Decorators.DecoratorsCollector.IsDecoratorChecker;
 using System.Diagnostics;
 
 
@@ -38,9 +26,6 @@ namespace DecoratorExecutable
             a.Stop();
             Console.WriteLine(a.ElapsedMilliseconds);
 
-            //CompileSolution(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln", "..\\..\\outFolder");
-            //GenerateCode();
-            // GenerateCode(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator.sln").Wait();
         }
 
         #region Funcion que se utiliza para decorar un project

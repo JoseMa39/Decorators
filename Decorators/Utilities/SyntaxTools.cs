@@ -133,7 +133,7 @@ namespace Decorators.Utilities
         internal static bool BelongTo(IEnumerable<UsingDirectiveSyntax> e, UsingDirectiveSyntax currentUsing)
         {
             foreach (var item in e)
-                if (currentUsing.Name.WithoutTrivia().GetText().ToString() == item.Name.WithoutTrivia().GetText().ToString())
+                if (currentUsing.Name.WithoutTrivia().ToString() == item.Name.WithoutTrivia().ToString())
                     return true;
 
             return false;

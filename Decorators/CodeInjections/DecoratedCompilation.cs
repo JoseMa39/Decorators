@@ -82,6 +82,7 @@ namespace Decorators.CodeInjections
             string directoryOutput = IOUtilities.BasePath(project.FilePath) + "\\" + outputRealPathModifiedFiles;
             CleanDirectory(directoryOutput);  //limpiando carpeta de salida
 
+
             foreach (var doc in project.Documents)
             {
                 var currentRoot = await doc.GetSyntaxRootAsync();
@@ -151,34 +152,16 @@ namespace Decorators.CodeInjections
                     //Buscando decorador
                     var decoratorMethod = LookingForDecorator(nombreDecorador, decoratorAttr);
                     if (decoratorMethod == null)
-                    {
-                        this.log.AddError(root.SyntaxTree.FilePath, node.GetLocation().GetLineSpan().StartLinePosition.Line, $"Decorator {nombreDecorador} doesnt exist", Severity.Error);
                         return root;
-                    }
 
                     //Creando decorador con los tipos especificos de la funcion decorada
                     MemberDeclarationSyntax memberToAdd = decoratorMethod.CreateSpecificDecorator(node, methodSymbol);
 
-                    foreach (var item in decoratorMethod.GetUsingNamespaces())
-                    {
-                        if (!SyntaxTools.BelongTo(usingsDirectives, item))
-                            usingsDirectives.Add(item);
-                    }
-                    var decoCurrentNamespace = BuildUsingStatement(decoratorMethod.CurrentNamespaces);
-                    if (!SyntaxTools.BelongTo(usingsDirectives, decoCurrentNamespace))
-                        usingsDirectives.Add(decoCurrentNamespace);
+                    AddDecoUsingToList(usingsDirectives, decoratorMethod);    //anade los using del decorador al cs donde es aplicado
 
-                    if (memberToAdd.GetAnnotations("using").Any())
-                    {
-                        foreach (var item in memberToAdd.GetAnnotations("using"))
-                        {
-                            int cantArgs = int.Parse(item.Data);
-                            
-                            if (!this.classesToGen.Contains(cantArgs))  //guardando las clases que necesito generar
-                                classesToGen.Add(cantArgs);
-                        }
-                    }
-                    modifiedClass = modifiedClass.AddMembers(memberToAdd);  //revisar
+                    UpdateToGenerateClasses(memberToAdd);   //actualiza la lista de clases paramsGenerics a generar
+                   
+                    modifiedClass = modifiedClass.AddMembers(memberToAdd);  //anadiendo el decorador especifico
                 }    
             }
             #endregion
@@ -190,18 +173,20 @@ namespace Decorators.CodeInjections
 
             #endregion
 
-
             #region generating static delegate which value is decorated function
-            //Creando delegate estatico con la funcion decorada ///////////////////////////////////////////////////////
+            //Creando delegate estatico con la funcion decorada 
             var field = CreateStaticFieldDelegate(node, decoEnumerable, methodSymbol,semanticModel);
             modifiedClass = modifiedClass.AddMembers(field);
 
             #endregion
+
             #region Creating delegate if its necessary
+
             if (hasParamsModifiers)
                 modifiedClass = modifiedClass.AddMembers(CreateDelegateConstr(node,methodSymbol));
 
             #endregion
+
             #region Doing code substitution inside to decorated original function body
 
             //Sustituyendo el codigo de la funcion a decorar (return staticDelegateDecorated(param1, ... , paramN))
@@ -211,13 +196,17 @@ namespace Decorators.CodeInjections
 
 
             root = root.ReplaceNode(originalclass, modifiedClass);
-            root = AddUsingsWithoutRepetition(root, usingsDirectives);
+            root = AddUsingsWithoutRepetition(root, usingsDirectives, node.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.WithoutTrivia().ToString());
             return root;
         }
+
+        
 
         #endregion
 
         #region functions that change original code
+
+
 
         //anade el metodo privado con el mismo codigo q la funcion decorada y devuelve un classSyntaxNode con esa modificacion
         private MethodDeclarationSyntax CreatePrivateMethod(MethodDeclarationSyntax node, SemanticModel toDecoratedSemanticModel, IMethodSymbol toDecoratedSymbol)
@@ -353,7 +342,6 @@ namespace Decorators.CodeInjections
                 {
                     var location = decoratorAttr.GetLocation();
                     this.log.AddError(location.SourceTree.FilePath,location.GetLineSpan().StartLinePosition.Line, $"Decorator {nameDecorator} don't exist", Severity.Error);
-
                 }
                 return null;
             }
@@ -373,7 +361,6 @@ namespace Decorators.CodeInjections
             {
                 var arg = SyntaxFactory.Argument(SyntaxFactory.IdentifierName(item.Identifier.Text));
 
-
                 var mod = item.Modifiers;   //para anadir ref o out en caso de que se necesite
                 if (mod.Count != 0)
                     arg = arg.WithRefKindKeyword(mod.First());
@@ -390,6 +377,7 @@ namespace Decorators.CodeInjections
             return SyntaxFactory.InvocationExpression(expr, argumentos);
         }
 
+        //Limpia directorio de salida
         private void CleanDirectory(string directoryOutput)
         {
             try  //por si es la primera vez que no existe el directorio
@@ -403,11 +391,7 @@ namespace Decorators.CodeInjections
             catch (Exception) { }
         }
 
-        /// <summary>
-        /// Add using directive with generated classes namespace
-        /// </summary>
-        /// <param name="root"></param>
-        /// <returns></returns>
+        //Add using directive with generated classes namespace
         private SyntaxNode AddUsing(SyntaxNode root)
         {
             var using1 = BuildUsingStatement(this.namespaceClassesGenerated);
@@ -417,20 +401,17 @@ namespace Decorators.CodeInjections
         }
 
         //añade los using de los cs de los decoradores sin repetir los que ya estan
-        private SyntaxNode AddUsingsWithoutRepetition(SyntaxNode root, List<UsingDirectiveSyntax> references)
+        private SyntaxNode AddUsingsWithoutRepetition(SyntaxNode root, List<UsingDirectiveSyntax> references, string currentNamespace)
         {
             var currentRootUsings = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
-
-
-
-            root = root.InsertNodesBefore(root.ChildNodes().First(), references.Where(n => !SyntaxTools.BelongTo(currentRootUsings, n)));
+            root = root.InsertNodesBefore(root.ChildNodes().First(), references.Where(n => !SyntaxTools.BelongTo(currentRootUsings, n) && n.Name.WithoutTrivia().GetText().ToString() != currentNamespace));
             return root;
         }
 
         //construye using namespaceName;
         private UsingDirectiveSyntax BuildUsingStatement(string namespaceName)
         {
-            return SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(namespaceName).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\n"));
+            return SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(namespaceName).WithLeadingTrivia(SyntaxFactory.ParseLeadingTrivia(" "))).WithTrailingTrivia(SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, "\r\n"));
         }
 
         private ClassDeclarationSyntax GetOriginalClass(MethodDeclarationSyntax method, SyntaxNode currentRoot)
@@ -473,9 +454,35 @@ namespace Decorators.CodeInjections
             return SyntaxFactory.GenericName(SyntaxFactory.Identifier("Func"), argumentList);
         }
 
-        
-        #endregion
+        //anade los using de los cs de los decoradores al cs donde son aplicados
+        private void AddDecoUsingToList(List<UsingDirectiveSyntax> usingsDirectives, IDecorator decoratorMethod)
+        {
+            foreach (var item in decoratorMethod.GetUsingNamespaces())
+            {
+                if (!SyntaxTools.BelongTo(usingsDirectives, item))
+                    usingsDirectives.Add(item);
+            }
+            var decoCurrentNamespace = BuildUsingStatement(decoratorMethod.CurrentNamespaces);
+            if (!SyntaxTools.BelongTo(usingsDirectives, decoCurrentNamespace))
+                usingsDirectives.Add(decoCurrentNamespace);
+        }
 
+        //actualiza la lista de clases ParamGenerics a generar
+        private void UpdateToGenerateClasses(MemberDeclarationSyntax memberToAdd)
+        {
+            if (memberToAdd.GetAnnotations("using").Any())
+            {
+                foreach (var item in memberToAdd.GetAnnotations("using"))
+                {
+                    int cantArgs = int.Parse(item.Data);
+
+                    if (!this.classesToGen.Contains(cantArgs))  //guardando las clases que necesito generar
+                        this.classesToGen.Add(cantArgs);
+                }
+            }
+        }
+
+        #endregion
 
     }
 }
