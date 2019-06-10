@@ -98,7 +98,7 @@ namespace Decorators.Utilities
             return SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList<TypeSyntax>(parametersList.Parameters.Select(n => SyntaxFactory.IdentifierName(n.Identifier.Text))));
         }
 
-        //construye el tipo contenedor de la clase en el caso de que la función a decorar sea de instancia
+        //construye el tipo contenedor de la clase (classType instance) en el caso de que la función a decorar sea de instancia
         internal static TypeSyntax GetTargetType(MethodDeclarationSyntax toDecorated, IMethodSymbol toDecoratedMethodSymbol)
         {
             var receiverType = toDecoratedMethodSymbol.ReceiverType as INamedTypeSymbol;
@@ -129,7 +129,15 @@ namespace Decorators.Utilities
             return SyntaxFactory.ParameterList(separatedList).WithTriviaFrom(toDecoratedMethod.ParameterList);
         }
 
+        //dice si un usingSyntax se encuentra en un ienumerableUsing
+        internal static bool BelongTo(IEnumerable<UsingDirectiveSyntax> e, UsingDirectiveSyntax currentUsing)
+        {
+            foreach (var item in e)
+                if (currentUsing.Name.WithoutTrivia().GetText().ToString() == item.Name.WithoutTrivia().GetText().ToString())
+                    return true;
 
+            return false;
+        }
 
 
         internal static bool CheckErrors(Compilation compilation, IErrorLog log) //chequea si el copmilation tiene algun error

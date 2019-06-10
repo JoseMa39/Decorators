@@ -159,8 +159,14 @@ namespace Decorators.CodeInjections
                     //Creando decorador con los tipos especificos de la funcion decorada
                     MemberDeclarationSyntax memberToAdd = decoratorMethod.CreateSpecificDecorator(node, methodSymbol);
 
-                    //usingsDirectives.AddRange(decoratorMethod.GetUsingNamespaces());    //añadiendo los usings necesarios
-                    //usingsDirectives.Add(BuildUsingStatement(decoratorMethod.CurrentNamespaces));  //añadiendo el namespace del decorador
+                    foreach (var item in decoratorMethod.GetUsingNamespaces())
+                    {
+                        if (!SyntaxTools.BelongTo(usingsDirectives, item))
+                            usingsDirectives.Add(item);
+                    }
+                    var decoCurrentNamespace = BuildUsingStatement(decoratorMethod.CurrentNamespaces);
+                    if (!SyntaxTools.BelongTo(usingsDirectives, decoCurrentNamespace))
+                        usingsDirectives.Add(decoCurrentNamespace);
 
                     if (memberToAdd.GetAnnotations("using").Any())
                     {
@@ -205,7 +211,7 @@ namespace Decorators.CodeInjections
 
 
             root = root.ReplaceNode(originalclass, modifiedClass);
-            //root = AddUsingsWithoutRepetition(root, usingsDirectives);
+            root = AddUsingsWithoutRepetition(root, usingsDirectives);
             return root;
         }
 
@@ -410,11 +416,14 @@ namespace Decorators.CodeInjections
             return root;
         }
 
-        //añade los using sin repetir los que ya estan
+        //añade los using de los cs de los decoradores sin repetir los que ya estan
         private SyntaxNode AddUsingsWithoutRepetition(SyntaxNode root, List<UsingDirectiveSyntax> references)
         {
-            //var currentRootUsing = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
-            root = root.InsertNodesBefore(root.ChildNodes().First(), references);
+            var currentRootUsings = root.DescendantNodes().OfType<UsingDirectiveSyntax>();
+
+
+
+            root = root.InsertNodesBefore(root.ChildNodes().First(), references.Where(n => !SyntaxTools.BelongTo(currentRootUsings, n)));
             return root;
         }
 
