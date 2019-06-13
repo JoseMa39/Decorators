@@ -19,9 +19,25 @@ namespace DecoratorExecutable
         {
             a = new Stopwatch();
             a.Start();
+
+            #region Otros proyectos
             //GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Tesis Projects\19-3-4 Funciones Decoradoras\Probador\ProbadorFuncDecorator\ProbadorFuncDecorator\ProbadorFuncDecorator.csproj").Wait();
 
-            GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\AcmeRentalCar(Roslyn)\AcmeRentalCAr\AcmeRentalCAr.csproj").Wait();
+            //GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\AcmeRentalCar(Roslyn)\AcmeRentalCAr\AcmeRentalCAr.csproj").Wait();
+
+            //GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\Roslyn-AOP\AOPExamples-master\AOPTutorial\AOPTutorial.csproj").Wait();
+
+            //GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\Roslyn-AOP\d1\d1.csproj").Wait();
+
+            //GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\Roslyn-AOP\PostSharp.Samples-master\Framework\PostSharp.Samples.Authorization\PostSharp.Samples.Authorization.csproj").Wait();
+
+            //GenerateCodeFromProject(@"C:\Users\Laptop\Desktop\Roslyn-AOP\GeoWallE(PostSharp)\GSharpInterpreter\GSharpInterpreter.csproj").Wait();
+
+            #endregion
+
+
+            GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Escrito\Expo\Predefensa FancyDeco\Predefensa FancyDeco\Predefensa FancyDeco.csproj").Wait();
+
 
             a.Stop();
             Console.WriteLine(a.ElapsedMilliseconds);

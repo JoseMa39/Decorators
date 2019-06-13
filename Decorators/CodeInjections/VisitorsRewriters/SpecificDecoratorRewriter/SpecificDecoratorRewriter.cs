@@ -214,7 +214,10 @@ namespace Decorators.CodeInjections
         //asegurandome cambiar los tipos dynamic... del decorador
         public override SyntaxNode VisitQualifiedName(QualifiedNameSyntax node)
         {
-            var type = modeloSemanticoDecorator.GetTypeInfo(node).Type as ITypeSymbol;
+            //var type = modeloSemanticoDecorator.GetTypeInfo(node).Type;
+
+            var type = modeloSemanticoDecorator.GetSymbolInfo(node).Symbol;
+
             string completeType = type.OriginalDefinition.ToDisplayString();
             if (completeType == this.toTupleParamsType)
             {

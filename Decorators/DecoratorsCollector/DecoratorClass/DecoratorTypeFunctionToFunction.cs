@@ -34,12 +34,11 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         {
             get
             {
-                var symbol = semanticModel.GetSymbolInfo(this._decorator.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name).Symbol as INamespaceSymbol;
-                return symbol.Name;
+                return this._decorator.Ancestors().OfType<NamespaceDeclarationSyntax>().First().Name.WithoutTrivia().ToFullString();
             }
         }
 
-        public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr)
+        public ExpressionSyntax CreateInvocationToDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol, ExpressionSyntax expr, AttributeSyntax attr, SemanticModel modelTodecorated)
         {
             var node = toDecorated as MethodDeclarationSyntax;
 

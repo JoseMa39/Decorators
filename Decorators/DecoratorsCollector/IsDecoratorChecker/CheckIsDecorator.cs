@@ -73,7 +73,7 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
                    attr.DescendantNodes()
                        .OfType<InvocationExpressionSyntax>().FirstOrDefault(exp => exp.DescendantNodes().FirstOrDefault() is IdentifierNameSyntax identifierNode &&
                            identifierNode.Identifier.Text == "nameof")?.ArgumentList.Arguments.First()
-                       ?.Expression.ToFullString();
+                       ?.Expression.WithoutTrivia().ToFullString().Split('.').Last();
         }
 
         public async Task<IEnumerable<IDecorator>> GetDecorators(Project project)

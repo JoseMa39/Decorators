@@ -276,9 +276,9 @@ namespace Decorators.CodeInjections
                 {
                     string namePrivateFunc = SyntaxTools.GetFuncPrivateName(node.Identifier.Text);
                     var exp = (SyntaxTools.HasGenericTypes(node)) ? (ExpressionSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier(namePrivateFunc),SyntaxTools.MakeArgsFromParams(node.TypeParameterList)): SyntaxFactory.IdentifierName(namePrivateFunc) ;
-                    inv = decorator.CreateInvocationToDecorator(node, methodSymbol, exp , item);    // creando la invocacion al decorador
+                    inv = decorator.CreateInvocationToDecorator(node, methodSymbol, exp , item,model);    // creando la invocacion al decorador
                 }
-                else inv = decorator.CreateInvocationToDecorator(node, methodSymbol, inv, item); 
+                else inv = decorator.CreateInvocationToDecorator(node, methodSymbol, inv, item, model); 
             }
 
             //__fibDecorator(__FibPrivate)

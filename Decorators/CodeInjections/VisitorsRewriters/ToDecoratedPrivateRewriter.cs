@@ -87,7 +87,8 @@ namespace Decorators.CodeInjections
             
             if ((!(node.Parent is MemberAccessExpressionSyntax) || ((MemberAccessExpressionSyntax)node.Parent).Expression==node) && !toDecoratedMethodSymbol.IsStatic && identifierSymbol!=null)   //si no forma parte de una expresion de la forma a.method(), entonces tengo que poner la instancia del objeto
             {                                                                                                                                                                                       //tambien tengo en cuenta cuando es a.method() pero node == a
-                if(identifierSymbol.Kind == SymbolKind.Field || identifierSymbol.Kind == SymbolKind.Property || (identifierSymbol.Kind == SymbolKind.Method && identifierSymbol.ContainingType == toDecoratedMethodSymbol.ReceiverType && !identifierSymbol.IsStatic))
+                //if ((identifierSymbol.Kind == SymbolKind.Field || identifierSymbol.Kind == SymbolKind.Property || (identifierSymbol.Kind == SymbolKind.Method && identifierSymbol.ContainingType == toDecoratedMethodSymbol.ReceiverType)) && !identifierSymbol.IsStatic)
+                if ((identifierSymbol.Kind == SymbolKind.Field || identifierSymbol.Kind == SymbolKind.Property || (identifierSymbol.Kind == SymbolKind.Method && node.Parent is InvocationExpressionSyntax)) && !identifierSymbol.IsStatic)
                 {
                     return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName(this.instanceName), node.WithoutLeadingTrivia()).WithTriviaFrom(node);
                 }

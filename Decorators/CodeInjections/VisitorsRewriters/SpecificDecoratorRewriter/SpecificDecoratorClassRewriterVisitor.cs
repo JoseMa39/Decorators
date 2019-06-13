@@ -47,7 +47,12 @@ namespace Decorators.CodeInjections
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
         {
             node = base.VisitConstructorDeclaration(node) as ConstructorDeclarationSyntax;
-            return node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated));
+
+            if (classDecorator.Identifier.Text == node.Identifier.Text)
+            {
+                 return node.WithIdentifier(SyntaxFactory.Identifier(this.nameSpecificDecoratorgenerated));
+            }
+            return node;
         }
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
