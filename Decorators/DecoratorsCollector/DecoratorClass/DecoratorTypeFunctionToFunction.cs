@@ -11,26 +11,28 @@ using System.Threading.Tasks;
 
 namespace Decorators.DecoratorsCollector.DecoratorClass
 {
-    internal enum TypeDecorator {Function, Class}
+    public enum TypeDecorator {Function, Class}
     class DecoratorTypeFunctionToFunction:IDecorator
     {
         readonly MethodDeclarationSyntax _decorator;
         readonly SemanticModel semanticModel;
         TypeDecorator type;
-        public DecoratorTypeFunctionToFunction(MethodDeclarationSyntax decorator, SemanticModel semanticModel)
+        public DecoratorTypeFunctionToFunction(MethodDeclarationSyntax decorator = null, SemanticModel semanticModel = null)
         {
             this._decorator = decorator;
             this.semanticModel = semanticModel;
             type = TypeDecorator.Function;
         }
 
+
+
         #region IDecorator
         public SyntaxNode DecoratorNode => _decorator;
 
-        public string Identifier { get => this._decorator.Identifier.Text;}
+        public virtual string Identifier { get => this._decorator.Identifier.Text;}
         public TypeDecorator Type { get => type; }
 
-        public string CurrentNamespaces
+        public virtual string CurrentNamespaces
         {
             get
             {
@@ -53,14 +55,14 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
             return SyntaxFactory.InvocationExpression(type, SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(expr)));
         }
 
-        public MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
+        public virtual MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
         {
             SpecificDecoratorFuncRewriterVisitor deco = new SpecificDecoratorFuncRewriterVisitor(this.semanticModel, toDecoratedSymbol, this._decorator , toDecorated as MethodDeclarationSyntax);
             var newDecorator = deco.Visit(_decorator);
             return newDecorator as MethodDeclarationSyntax;
         }
 
-        public IEnumerable<UsingDirectiveSyntax> GetUsingNamespaces()
+        public virtual IEnumerable<UsingDirectiveSyntax> GetUsingNamespaces()
         {
             return this._decorator.SyntaxTree.GetRoot().DescendantNodes().OfType<UsingDirectiveSyntax>();
         }
@@ -69,7 +71,9 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
         #region tools
         private string GetNameSpecificDecorator(string nameMethodToDecorated)  //devuelve el nombre con que se generaran los decoradores de este tipo
         {
-            return SyntaxTools.FormatterStringNames(_decorator.Identifier.Text, nameMethodToDecorated);
+            //return SyntaxTools.FormatterStringNames(_decorator.Identifier.Text, nameMethodToDecorated);
+            return SyntaxTools.FormatterStringNames(this.Identifier, nameMethodToDecorated);
+
         }
 
         #endregion

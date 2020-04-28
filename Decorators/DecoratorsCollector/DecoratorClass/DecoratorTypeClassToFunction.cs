@@ -64,7 +64,7 @@ namespace Decorators.DecoratorsCollector.DecoratorClass
 
         //Devuelve la lista con los argumentos correspondientes a un decorador en especifico
 
-        public MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
+        public virtual MemberDeclarationSyntax CreateSpecificDecorator(SyntaxNode toDecorated, IMethodSymbol toDecoratedSymbol)
         {
             string nameSpecificDecorator = GetNameSpecificDecorator((toDecorated as MethodDeclarationSyntax).Identifier.Text);
             var specificDecorator = new SpecificDecoratorClassRewriterVisitor(semanticModel,toDecoratedSymbol,this._decorator,toDecorated as MethodDeclarationSyntax, nameSpecificDecorator);

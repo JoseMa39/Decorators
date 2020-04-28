@@ -257,6 +257,8 @@
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\CheckIsDecorator.cs" />
     <Compile Include="DecoratorsCollector\DecoratorClass\DecoratorTypeFunctionToFunction.cs" />
     <Compile Include="DecoratorsCollector\IsDecoratorChecker\IDecoratorChecker.cs" />
+    <Compile Include="DecoratorsCollector\PredefinedDecorators\MemoizeDeco.cs" />
+    <Compile Include="DecoratorsCollector\PredefinedDecorators\PredefinedDecorator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\ErrorLogger\DiagnosticMessage.cs" />
     <Compile Include="Utilities\ErrorLogger\ErrorLog.cs" />

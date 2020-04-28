@@ -49,8 +49,12 @@ namespace Decorators.CodeInjections
                     node = node.WithBody(node.Body.AddStatements(SyntaxFactory.ReturnStatement(SyntaxFactory.Token(node.Body.GetLeadingTrivia().AddRange(SyntaxFactory.ParseLeadingTrivia("    ")), SyntaxKind.ReturnKeyword, SyntaxFactory.ParseTrailingTrivia(" ")), SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression), SyntaxFactory.Token(SyntaxKind.SemicolonToken)).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia("\n"))));
                 }
 
+                var modifiers = SyntaxTools.AddingPrivateModifier(toDecoratedMethod.Modifiers);
+                var overrideVirtualMod = modifiers.Where(m => m.Kind() == SyntaxKind.OverrideKeyword || m.Kind() == SyntaxKind.VirtualKeyword);
+                if(overrideVirtualMod.Count() != 0)
+                    modifiers = modifiers.Remove(overrideVirtualMod.First());
 
-                node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(SyntaxTools.AddingPrivateModifier(toDecoratedMethod.Modifiers));
+                node = node.WithIdentifier(name).WithAttributeLists(attrList).WithModifiers(modifiers);
 
                 return (toDecoratedMethodSymbol.IsStatic) ? node : node.WithParameterList(SyntaxTools.MakeNewParametersList(toDecoratedMethod,toDecoratedMethodSymbol,instanceName)).AddModifiers(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.ParseTrailingTrivia(" ")));
             }

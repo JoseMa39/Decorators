@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Decorators.DecoratorsCollector.DecoratorClass;
+using Decorators.DecoratorsCollector.PredefinedDecorators;
 using DecoratorsDLL.DecoratorsClasses;
 using DecoratorsDLL.DecoratorsClasses.DynamicTypes;
 using Microsoft.CodeAnalysis;
@@ -90,7 +91,20 @@ namespace Decorators.DecoratorsCollector.IsDecoratorChecker
                 decorators.AddRange(root.DescendantNodes().OfType<MethodDeclarationSyntax>().Where(node => this.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeFunctionToFunction(n, semanticModel)));
                 decorators.AddRange(root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(node => this.IsDecorator(node, semanticModel)).Select(n => new DecoratorTypeClassToFunction(n, semanticModel, this)));
             }
+
+            decorators.AddRange(AddPredefinedDecorators());
             return decorators;
+        }
+
+        //revisar estructura
+        private IEnumerable<IDecorator> AddPredefinedDecorators()
+        {
+            List<IDecorator> decorators = new List<IDecorator>();
+            decorators.Add(new MemoizeDeco());
+
+            return decorators;
+
+
         }
         #endregion
     }
