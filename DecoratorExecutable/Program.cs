@@ -35,7 +35,7 @@ namespace DecoratorExecutable
 
             #endregion
 
-
+            //cambiar aqui el proyecto a decorar
             GenerateCodeFromProject(@"C:\Datos\Trabajando en la tesis\II Semestre\Tesis\Escrito\Expo\Predefensa FancyDeco\Predefensa FancyDeco\Predefensa FancyDeco.csproj").Wait();
 
 
